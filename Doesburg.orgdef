@@ -1,0 +1,231 @@
+Name: Doesburg
+# See orgdef.html for explanation/rules.
+# http://www.sonusparadisi.cz/en/organs/top-selection/doesburg-martinikerk-walcker-organ.html
+Application: Hauptwerk
+Version: 3
+
+GeneralReset: {System: System Reset, DelaySeconds: 6}
+ControlsDefaultOn: {Control: [Auslöser, Calcant]}
+
+Divisions:
+  I:
+    Attributes:
+      Synonyms: Hauptwerk 
+      Channel: 1
+
+    Dulciana 8: [85, 122]
+    Gemshorn 8: [85, 123]
+    Gross-Prinzipal 8:
+      Address: [85, 124]
+      Synonyms: Gr.-Prinzipal 8
+    Rohr-Flöte 4: 3
+    Oktave 2: 0
+    Mixtur 5 fach: [85,127]
+
+    Prinzipal 16: 2
+    Bourdon 8: [85,121]
+    Jubal-Flöte 8: [85, 125]
+    Viola da Gamba 8: #stop knob says "di", but "da" is correct
+      Address: 5
+      Synonyms: [ Viola di Gamba 8,  V. di Gamba 8,  V. da Gamba 8]
+    Praestant 4: 1
+    Kornett 3-5 fach: [85, 126]
+    Trompete 8: 4
+    
+    II/I: 72
+    IV/I: 77
+    Sub II/I: 100
+    Super II/I: 104
+    Melodie-Koppel II/I: 93
+    
+    III/I: 74
+    Leerlauf Koppel I: 91
+    Sub III/I: 101
+    Super III/I: 106
+    Bass-Koppel I: 82
+    I to I 4: [System, SuperCouplerI]
+    
+  II:
+    Attributes:
+      Synonyms: Schwellewerk 
+      Channel: 2
+      Expression: Yes
+
+    Bourdon 16: 7
+    Flöte-harmonique 8:
+      Address: 11
+      Synonyms: Flöte-harm. 8
+    Cello 8: 8
+    Prinzipal 4: 20
+    Gross-Mixtur 5-7 fach: 13
+    Trompete harmonique 8:
+      Address: 24
+      Synonyms: Tromp. harm. 8
+
+    Harmonika 8: 14
+    Salicional 8: 21
+    Syntemat. 8:
+      Address: 22
+      Synonyms: [Syntematophon 8,  Synthematophon 8]
+    Piccolo 2: 19
+    Kornettino 3-4 fach: 15
+    Orchester Oboe 8: 18
+
+    Doppel-Gedackt 8:
+      Address: 10
+      Synonyms: [Doppel-Ged. 8, Doppel-Gedekt 8]
+    Flöten-Prinzipal 8:
+      Address: 12
+      Synonyms:    Fl.-Prinzipal 8
+    Orchester Flöte 4:
+      Address: 17
+      Synonyms: Orch. Flöte 4
+    Nazard 2-2/3: 16
+    Basson 16: 6
+    Clairon harmonique 4:
+       Address: 9
+       Synonyms: Clairon harm. 4
+
+    III/II: 75
+    Melodie-Koppel I/II: 92
+    Tremolo II: 23
+    Sub III/II: 102
+    Melodie-Koppel III/II: 95
+
+    Super III/II: 107
+    Bass-Koppel II: 83
+
+    #These are here so that orgdef-driven general cancel will get them,
+    #because live playing on my 3-manual setup needs them to access IV
+    #as a chorale-prelude solo. Midi files can play IV just fine without them.
+    #These are 4 of HW's 15 "Division 2 master couplers".
+    Sub IV/II: [System, IV / II 16]
+    IV/II: [System, IV / II 8]
+    Super IV/II: [System, IV / II 4]
+    Melodie-Koppel IV/II: [System, IV / II Melody]
+
+  III:
+    Attributes:
+      Synonyms: Positiv 
+      Channel: 3
+      Expression: Yes
+
+    Lieblich-Gedackt 16:
+      Address: 33
+      Synonyms: [Lieblich-Gedekt 16, Lieblich-Ged. 16]
+
+    Aeoline 8: 25
+    Konzert-Flöte 8: 31
+    Quintaton 8: 35
+    Liebes-Geige 4: 32
+    Flautino 2: 27
+    Cymbel 3-4 fach: 26
+
+    Lieblich-Gedackt 8:
+      Address: 34
+      Synonyms: Lieblich-Gedekt 8
+    Vox Coelestis 8: 39
+    Viola d\'Amour 8: 38
+    Geigen-Prinzipal 8:
+      Address: 29
+      Synonyms: Gn.-Prinzipal 8
+    Flauto-Dolce 4: 28
+    Sesquialtera 2 fach: 36
+    Klarinette 8: 30
+
+    IV/III: 78
+    Melodie-Koppel II/III: 94
+    Tremolo III: 37
+
+    Melodie-Koppel IV/III: 96
+    Bass-Koppel III: 84
+
+  IV:
+    Attributes:
+      Channel: 4
+      Synonyms: Echowerk
+      Expression: Yes
+
+    Quintaton 16: 44
+    Vox-Angelika 8: 47
+    Nachthorn 8: 43
+    Glockenton 4 & 3 fach: 42
+    Echo-Trompete 8: 46
+
+    Echo-Bourdon 8: 40
+    Echo-Gamba 8: 41
+    Spitz-Flöte 4: 45
+    Vox-Humana 8: 48
+    
+    Sub IV: 103
+    Bass-Koppel IV: 85
+    Tremolo IV: 112
+    Super IV: 108
+
+  Pedal:
+    Attributes:
+      Channel: 0
+      
+    Gross Bourdon 32: 
+      Address: 49
+      Synonyms: Gr.-Bourdon 32
+    Subbass 16: 52
+    Kontrabass 16: 51
+    Quintbass 10-2/3: 57
+    Flötenbass 8: 60
+
+    Harmonisch-bass 16:
+      Address: 55
+      Synonyms: Harm.-bass 16
+    Flötenbass 16: 53
+    Prinzipalbass 16: 50
+    Oktavbass 8: 58
+    Choralbass 4: 63
+
+    Echobass 16: 56
+    Gedacktbass 16: 54
+    Bourdon Doux 16: 62
+    Bassflöte 8: 61
+    Violon-Cello 8: 59
+    Bassonbass 16: 67
+    Clairon harmonique 4:
+      Address: 69
+      Synonyms:    Clairon harm. 4
+
+    Mixtur 5 fach: 64
+
+    Bombardon 32: 65
+    Posaune 16: 66
+    Tuba 8: 68
+
+    I/Ped.: 70
+    II/Ped.: 73
+    III/Ped.: 76
+    Super II/Ped.: 105
+    IV/Ped.: 79
+    Automatisch Piano Ped.: 80
+
+  Control:
+    Attributes: {NonSpeaking: Yes}
+    P: 99
+    Crescendo ab: 87
+    MF: 97
+    Handregister ab: 90
+    F: 88
+    16\' ab: 71
+
+    Tutti ohne Mixturen und Zungen: 109
+    Tutti samt Koppeln: 110
+    Zungen ab: 111
+    Mixturen ab: 98
+
+    General-Koppel:
+      Address: 89
+      Synonyms:    General-coppel
+    Auslöser: 81
+    Calcant: 86
+
+
+    
+    
+    

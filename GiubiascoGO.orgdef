@@ -1,0 +1,51 @@
+Name: GiubiascoGO
+# https://www.piotrgrabowski.pl/giubiasco.html
+Application: GrandOrgue
+Version: 2
+DefaultP1: 0
+ProloguePath: GiubiascoGOPrologue.mid
+PrologueExpectedName: Giubiasco
+
+Synonyms:
+  Positivo Tergale: [Positiv, Positivo, Positif, I]
+  Grande Organo: [Grande, Grand Orgue, Grand, II]
+  Pedale: Pedal
+Channels: [Pedal, Positivo Tergale, Grande Organo]
+
+Divisions:
+  Positivo Tergale:
+    Bordone 8: 7
+    Flauto 4: 8
+    Quinta 2-2/3: 9
+    Principale 2: 10
+    Terza 1-3/5: 11
+    Larigot 1-1/3: 12
+    Cimbalo ii file:  13
+    Regale 8: 14
+    Tremolo: 15
+
+
+  Grande Organo:
+    I al II: 16
+    Principale 8: 17
+    Viola da Gamba 8: 18
+    Flauto a camino 8: 19
+    Voce umana 8: 20
+    Ottava 4: 21
+    Flauto conico 4: 22
+    Quintadecima 2: 23
+    Quinta Decima 2: 23
+    Cornetto 2-2/3: 24
+    Ripieno iv: 25
+    Violoncello 8: 26
+
+    Zimbelstern: 28
+
+
+  Pedale:
+    Subbasso 16: 3
+    Flauto 8: 4
+    Ottava 4: 5
+    Contro Fagotto 16: 6
+    I al Pedale: 1
+    II al Pedale: 2

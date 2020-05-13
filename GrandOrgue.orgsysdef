@@ -1,0 +1,15 @@
+ShortName: GrandOrgue
+LongName: Grand Orgue Virtual Pipe Organ
+Options:  Prologue, TrackMerge
+DefaultStopModel: StopKnob
+ReversibleModels:
+  StopKnob:
+    Parameters: [[P1, 0], P2]
+    Channel: 0
+    On: [[ControlChange,99,P1],[ControlChange,98,P2],[ControlChange,6,127]]
+    Off: [[ControlChange,99,P1],[ControlChange,98,P2],[ControlChange,6,0]]
+SingleActionModels:
+  SingleSysex:
+    Parameters: [a, b, c, d, e]
+    Act: [[Sysex, 14, 125, 71, 79, a, b, c, d, e]]
+

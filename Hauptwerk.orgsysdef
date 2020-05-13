@@ -1,0 +1,40 @@
+ShortName: Hauptwerk
+LongName: Hauptwerk Virtual Pipe Organ
+DefaultStopModel: StopKnob
+ReversibleModels:
+  StopKnob:
+    Parameters: [[P1, 86], P2]
+    On:   [[Sysex, 11, 125, 57, 114, 16, 0, 0, P1, P2, 0, 0]]
+    Off:  [[Sysex, 11, 125, 57, 114, 17, 0, 0, P1, P2, 0, 0]]
+  CommonSwitch1:  #order doesn't matter -- py dict
+    Refer: CommonSwitch
+    Channel: 1 
+  CommonSwitch: 
+    Parameters: [[P1, 8], P2]
+    Channel: 0 
+    On:  [[ControlChange,99,P1],[ControlChange,98,P2],[ControlChange,6,127],[ControlChange,38,127]]
+    Off: [[ControlChange,99,P1],[ControlChange,98,P2],[ControlChange,6,0],[ControlChange,38,0]]
+SingleActionModels:
+  SingleSysex:
+    Parameters: [a, b, c, d, e, f, g]
+    Act: [[Sysex, 11, 125, 57, 114, a, b, c, d, e, f, g]]
+Controls:
+  Group1:
+    Class: CommonSwitch
+    SuperCouplerI: 8
+    I / I 4: 8
+    IV / II 16: 36
+    IV / II 8: 37  
+    IV / II 4: 38
+    IV / II Melody: 39
+  Group2:
+    Class: SingleSysex
+    System Reset: [28, 0, 0, 10, 27, 4, 1]
+    System Reset2: [28, 0, 0, 10, 27, 4, 4]
+
+Tests:
+  - [Control, SuperCouplerI, True]
+  - [Reversible, 5, SuperCouplerI, True]
+  - [Reversible, 5, IV / II 8, False]
+  - [Stop, 6, [86, 114], True]
+  - [Single, 7, System Reset]

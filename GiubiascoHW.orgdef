@@ -1,0 +1,62 @@
+Name: GiubiascoHW
+#Built by Mascioni
+# https://www.piotrgrabowski.pl/giubiasco.html
+Application: Hauptwerk
+StopModel: {Name: CommonSwitch, Channel: 1}
+Version: 3
+
+
+Divisions:
+  Positivo Tergale:
+    Attributes:
+      Channel:    1
+      DefaultP1: 16
+      Synonyms: [Positiv, Positivo, Positif, I]
+    Bordone 8:       53
+    Flauto 4:          54
+    Quinta 2-2/3: 55
+    Principale 2:    56
+    Terza 1-3/5:   57
+    Larigot 1-1/3: 58
+    Cimbalo ii file: 59
+    Regale 8:         60
+
+    Tremolo: [13, 56]
+
+
+  Grande Organo:
+    Attributes:
+      Channel:    2
+      DefaultP1: 17
+      Synonyms:  [Grande, Grand Orgue, Grand, II]
+    I al II: [8, 87]
+    Principale 8:          25
+    Viola da Gamba 8: 26
+    Flauto a camino 8: 27
+    Voce umana 8:      28
+    Ottava 4:               29
+    Flauto conico 4:    30
+    Quinta Decima 2:
+      Address:             31
+      Synonyms:  Quintadecima 2
+    Cornetto 2-2/3:   32
+    Ripieno iv:            33
+    Violoncello 8:       34
+
+
+#    Zimbelstern: 28 #  SysEx: data=[11, 125, 57, 114, 16, 0, 0, 0, 26, 0, 0]
+
+
+  Pedale:
+    Attributes:
+      Channel: 0
+      Synonyms: Pedal
+      DefaultP1: 15
+    Subbasso 16:           81
+    Flauto 8:                  82
+    Ottava 4:                 83
+    Contro Fagotto 16: 84
+
+
+    I al Pedale: [8, 77]
+    II al Pedale: [9, 49]

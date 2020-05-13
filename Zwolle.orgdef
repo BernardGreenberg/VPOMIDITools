@@ -1,0 +1,133 @@
+Name: Zwolle
+Application: Hauptwerk
+Version: 3
+ControlsDefaultOn: {Control: [Afsluiter Rugwerk, Afsluiter Hoofdwerk, Afsluiter Bovenpositief,
+                              Afsluiter Borstwerk, Afsluiter Pedaal]}
+DefaultP1: 86
+
+Divisions:
+  Rugwerk:
+    Attributes:
+      Channel: 1
+    
+    Afsluiter: 1
+    Praestant 8: 2
+    Octaav 4: [85, 126]
+    Quintfluit 2: 4
+    Superoctaav 2: 5
+    Scherp IV: 6
+    Fagot 16: 7
+
+    Roerfluit 8: [85, 127]
+    Quintadena 8: 3
+    Fluit 4: [85, 125]
+    Sexquialtera II: [85, 124]
+    Cimbel III: [85, 123]
+    Schalmey 8: [85, 122]
+
+  Hoofdwerk:
+    Attributes:
+      Channel: 2
+
+    Afsluiter: 17
+
+    Praestant 16: 18
+    Octaav 8: 19
+    Octaav 4: 13
+    Superoctaav 2: 22
+    Mixtuur VI: 11
+    Trompet 16: 10
+    Trompet 8: 24
+
+    Quintadena 16: 15
+    Roerfluit 8: 14
+    Speelfluit 4: 20
+    Nasaat 3: 21
+    Ruyschpyp II: 12
+    Cimbel III: 23
+    Vox Humana 8: 9
+
+  Bovenpositief:
+    Attributes:
+      Channel: 3
+      Synonyms: [Bovenpositif, Bovenpositiv, Bovenwerk]
+
+    Afsluiter: 49
+    Praestant 8: 50
+    Quinta 6: 46
+    Octaav 4: 45
+    Quinta 3: 52
+    Superoctaav 2: 53
+    Scherp V: 55
+    Viola da Gamba 8: 41
+
+    Viola 8: {Address: 47, Synonyms: Viool}
+    Holpyp 8: 51
+    Holpyp 4: 44
+    Woudfluit 2: 43
+    Siflet 1-1/2:
+       Address: 42
+       Synonyms: Sifflet
+    Tertiaan II: 54
+    Trompet 4: 56
+
+  Borstwerk:
+    Attributes: {Channel: 4}
+
+    Afsluiter: 65
+
+    Fluitgedekt 8: 63
+    Praestant 4: 66
+    Superoctaav 2: 67
+    Quintanus 1-1/2: 69
+    Mixtuur IV: 70
+    Dulciaan 8: 71
+
+    Roerfluit 4: 61
+    Spitsfluit 3: 62
+    Gemshoorn 2: 60
+    Nachthoorn 1: 68
+    Sesquialtera II: 59
+    Regaal 8: 58
+
+  Pedaal:
+    Attributes:
+      Channel:  0
+      Synonyms:  Pedal
+
+    Afsluiter: 33
+
+    Praestant 16: 34
+    Octaav 8: 35
+    Superoctaav 4: 36
+    Mixtuur VIII: 37
+    Bazuin 16: 38
+    Trompet 4: 39
+
+    Subbas 16: 31
+    Holpyp 8: 30
+    Vlakfluit 2: 29
+    Fagot 32: 28
+    Trompet 8: 27
+    Cornet 2: 26
+
+  Control:
+    Attributes: {NonSpeaking: Yes}
+    Tremulant Rugwerk: [85, 121]
+    Tremulant HW BP BW: 57
+    
+    Hoofdwerk Rugwerk: 0
+    Hoofdwerk Bovenpositief: 72
+    Hoofdwerk Borstwerk: 48
+    Bovenpositief Borstwerk: 64
+    Pedaal Hoofdwerk: 32
+
+    Afsluiter Rugwerk: {Refer: [Rugwerk, Afsluiter]}
+    Afsluiter Hoofdwerk: {Refer: [Hoofdwerk, Afsluiter]}
+    Afsluiter Bovenpositief: {Refer: [Bovenpositief, Afsluiter]}
+    Afsluiter Borstwerk:  {Refer: [Borstwerk, Afsluiter]}
+    Afsluiter Pedaal: {Refer: [Pedaal, Afsluiter]}
+
+    Windlosser: 40 #doesn't seem to do anything
+    Calcanten Klok: 8 #ditto
+    

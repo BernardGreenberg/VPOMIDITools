@@ -1,0 +1,29 @@
+Name: GreenPositivGO
+#Built by Stanisław Pielczyk (2008)
+# http://www.piotrgrabowski.pl/green-positiv.html
+Application: GrandOrgue
+Version: 3
+ProloguePath: GreenPositivGOPrologue.mid
+PrologueExpectedName: Green Positiv
+
+Divisions:
+  Positiv:
+    Attributes:
+      Channel:    0
+      DefaultP1: 0
+      Synonyms: [Positiv, Positivo, Positif, I, Main]
+    Flet kryty 8: 
+      Address:  1
+      Synonyms: [Gedakt 8, Gedekt 8, Stopped Flute 8]
+    Pryncypal 4: 
+      Address: 5
+      Synonyms: [Principal 4, Prinzipal 4, Oktav 4, Octave 4]
+    Flet kryty 4: 
+      Address:  2
+      Synonyms: [Gedakt 4, Gedekt 4, Stopped Flute 4, Octave Flute 4]
+    Pryncypal 2: 
+      Address: 3
+      Synonyms: [Principal 2, Prinzipal 2, Fifteenth 2]
+    Kwinta 1-1/3: 
+      Address: 4
+      Synonyms: [Quinta 1-1/3, Nineteenth 1-1/3, Larigot 1-1/3]
