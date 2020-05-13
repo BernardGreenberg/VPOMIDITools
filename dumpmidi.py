@@ -201,6 +201,9 @@ def parse_and_validate_args():
     return args
 
 def main():
+    print_("VPOMIDITools Copyright (C) 2016-2020 by Bernard S. Greenberg",
+               "GNU General Public License V.3 applies. See file LICENSE for details.",
+               sep="\n", file=sys.stderr)
     args = parse_and_validate_args()
     tracks_to_dump = decode_tracks_arg(args.Track)  #ok if None
 
