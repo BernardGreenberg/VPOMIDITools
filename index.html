@@ -1,0 +1,297 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title>BSG Midi/VPO tools</title>
+  <link rel="stylesheet" href="bsgmiditools.css">
+  <style>
+   .bmono {font-family: monospace; font-weight: bold; font-size: 120%}
+   .bmon0 {font-family: monospace; font-weight: bold; font-size: 100%}  </style>
+</head>
+<body>
+<h1>BSG tools for MIDI/VPOs &mdash; requirements, overview, common notions</tt></h1>
+<p>Copyright © 2016-2020 by Bernard Greenberg<br>
+   Version May 2018 </p>
+<!-- hhmts start --> <!-- --><!--hhmts end -->
+
+<p>These tools are offered under the GNU General Public License Version 3.
+Please see the file <b>LICENSE</b> for details.</p>
+<p><a href="changes.html">“Changes” document <b>here</b></a>.</p>
+
+<h2>Introduction</h2>
+<p>This tool set, by the author, is a suite of coordinated python programs and their support structure useful for dealing with <span class="smc">MIDI</span> files, including transmogrifying them from the form emitted by <a href="http://musescore.org">MuseScore</a> to forms usable by (suitable for playing the instruments provided by the) Hauptwerk and Grand Orgue virtual pipe organ (VPO) applications.</p>
+
+<p>This present document summarizes what these tools are and explains the prerequisites are for using them. It also explains common notions shared by them, such as the conventions for notating musical time.</p>
+
+<p>Although this page and its linked documents offer <a href="#midi">some explanation</a> of <span class="smc">MIDI</span>, you must already have some familiarity with <span class="smc">MIDI</span> files, the universal interchange medium between music editing, processing, and performance applications, or you would not be reading this.</p>
+
+<p>Hyperlinks such as <a href="index.html">this to this page</a> are to documents and sections of documents in this suite, unless marked with the little blue arrow borrowed from <a href="http://wikipedia.com">Wikipedia</a> as such (they are not all to Wikipedia).
+
+<p>Starting with <tt>insreg</tt> distribution <b>1.0.10</b>, a <a href="changes.html">changes document</a> is available.</p>
+
+<p>Starting with <tt>insreg</tt> distribution <b>1.0.11</b>, Python version 2 (no longer supported by python.org) is deprecated; Python version 3 (last tested with 3.8) is recommended for all parts of the suite.</p>
+
+<h3>Contents</h3>
+
+<blockquote style="font-size:120%">
+<a href="#doandare">What the tools are and do</a><br>
+<a href="#prerequisites">Software prerequistes (and how to get them)</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#python">Python</a><br>
+&nbsp;&nbsp;&nbsp;<a href="#yaml"><span class="smc">YAML</span> (including introduction to it and rules)</a><br>
+<a href="#errors">Error handling (your errors vs. mine)</a><br>
+<a href="#commonnotions">Common (shared) notions &mdash; measure and beat counting</a>
+</blockquote>
+
+
+<h2 id="doandare">What the tools are and do</h2>
+
+<p>The principal tools are <tt>insreg</tt>, <tt>phraseit</tt>, and <tt>dumpmidi</tt>.</p>
+
+<dl>
+  <dt><a href="insreg.html">insreg</a></dt>
+  <dd><p><tt>insreg</tt> is the main and highest-level tool.  In simplest terms, it takes MuseScore output and produces from it acceptable VPO input. It reads <span class="smc">MIDI</span> files written by MuseScore <b>Export</b>, reroutes staves and channels and inserts organ registration instructions as directed by a user-supplied script, and writes a new <span class="smc">MIDI</span> file that can be read and performed by the VPO applications.</p>
+
+    <p><a href="insreg.html">Documentation for <tt>insreg</tt> here.</a></p>
+
+    <p>In order to properly control the VPO engines, <tt>insreg</tt> relies on textual descriptions of specific vendors’ imagings of specific organs for that VPO application, called <tt>orgdef</tt>s.  I have preparared a handful. If you are trying to use <tt>insreg</tt> to prepare performances for organs for which I have not, you must do so yourself, a non-trivial but well-understood process, <a href="orgdef.html">described here</a>.</p></dd>
+    </dd>
+
+  <dt><a href="phraseit.html">phraseit</a></dt>
+  <dd><p><b><tt>phraseit</tt> is now (1.0.11; April 2020) deprecated.</b>  With the advent of the MuseScore articulation plugin (September 2019), there is no more reason to script articulation in this cumbersome manner.  It is included for work with previously-prepared scores.</p>
+
+    <p><tt>phraseit</tt> accepts  <span class="smc">MIDI</span> files, whether written by MuseScore or not, and applies “phrasings” as specified by a user-supplied script (<i>schedule</i>), producing a new <span class="smc">MIDI</span> file with those “phrasings” applied.
+
+    These “phrasings” consist of <i>cutbacks</i> of notes and chords at places identified by measure and beat by the user script, that is, making them shorter by an amount specified by the script, replacing the eliminated sound with an equal amount of silence (i.e., the timing of the score is not changed).  A given cutback can be applied to all staves or specific staves in the score.</p>
+
+    <p>While <tt>phraseit</tt> can be used by itself, it can also be invoked internally by <tt>insreg</tt>, as part of the latter’s conversion of a file, without requiring or producing an intermediate file.</p>
+
+    <p><a href="phraseit.html">Documentation for <tt>phraseit</tt> here.</a></p>
+    </dd>
+
+  <dt><a href="dumpmidi.html">dumpmidi</a></dt>
+  <dd><p><tt>dumpmidi</tt> is a <span class="smc">MIDI</span> inspection tool. It interprets and displays to the console (i.e., “dumps”) the contents of <span class="smc">MIDI</span> files, listing the “events” in each “track”, along with their scheduled time in <span class="smc">MIDI</span> units (“ticks”), measures and beats, and (optionally) real-time seconds (and fractions). It can be restricted by control arguments to specific tracks and measures.  Any <span class="smc">MIDI</span> file, not just those produced by MuseScore or this tool set, may be inspected with it.</p>
+
+    <p>Unlike most other <span class="smc">MIDI</span>-dumping tools, <tt>dumpmidi</tt> has the ability (<i>incremental mode</i>) to dump malformed/buggy <span class="smc">MIDI</span> files up to the point of error, which is invaluable when trying to locate and correct such problems.</p>
+      <p><a href="dumpmidi.html">Documentation for <tt>dumpmidi</tt> here.</a></p>
+    </dd>
+  </dl>
+
+<h2 id="prerequisites">Software prerequisites</h2>
+
+  <p>This software has been used on the Mac (OS X 10.11.6), Windows (10), and Ubuntu (16.04.3 LTS).  It is being developed on the Mac.  Being all python code, it has no operating system dependencies.</p>
+
+  <p>While <tt>insreg</tt> prepares files for either (Hauptwerk or Grand Orgue) VPO application, you do not have to have either system installed to use <tt>insreg</tt> or any other of these tools on a given machine or network.</p>
+
+<p>You must have or obtain the python system, and install the <span class="smc">YAML</span> system into it; instructions follow.</p>
+
+  <h3 id="python">Python</h3>
+
+  <p>Python (first released 1991, but development continues) is a general purpose programming/scripting language that has earned massive popularity and wide use in the last 20 or so years. You can learn more about it <a href="https://en.wikipedia.org/wiki/Python_(programming_language)">here (Wikipedia)</a>, but you don’t need to know anything about it to use these tools, other than that it is an interpreter, which means that all python programs (<i>whatever</i><tt>.py</tt>) are “data” to the python interpreter, which must be invoked to run them.  Thus, in order to use <tt>dumpmidi</tt> to dump <tt>MoonlightSonata.mid</tt>, you have to say to your command line (in any of the operating systems)</p>
+  <pre class="pfm">
+  python dumpmidi.py MoonlightSonata.mid
+  </pre>
+  <p>(<tt>python</tt> is the name of the python interpreter.) Control arguments to the python programs (as opposed to the interpreter) must follow the name of the program, not the name of the interpreter, i.e.,</p>
+  <pre class="pfm">
+  python dumpmidi.py -i MoonlightSonata.mid
+  <span style="font-family:roman;font-size: 80%;font-style: italic">or</span>
+  python dumpmidi.py MoonlightSonata.mid -i
+  <span style="font-family:roman;font-size: 80%;font-style: italic">not</span>
+  <del style="color: grey">python -i dumpmidi.py MoonlightSonata.mid</del>
+  </pre>
+  
+  <p>Python exists in two major versions, 2 and 3. As of this writing (April 2020), Version 2 is obsolete.  This suite functions correctly 
+    in Python version 3.  Python 3.6 is the minimum version required.   Installation packages for all current python versions are located <a href="https://www.python.org/downloads/">here on python.org</a>. You can download and install the appropriate one of these according to the hardware and conventions of your system (<tt>sudo</tt> or adminstrative access may or may not be necessary) if you do not already have a suitable python installed.</p>
+
+ <p>In Version 1.0.11 of this suite and earlier, either Python is supported, but support for Python version 2 will be dropped.</p>
+
+
+<h3 id="yaml">YAML</h3>
+
+<p><span class="smc">YAML</span> (rhymes with “camel”), for “<span class="smc">YAML</span> ain‘t (a) mark-up language”, is a very simple and natural formalism, a set of rules, for expressing structured data in text.  All of the user scripts and similar (e.g., organ descriptions) of this tool set use this formalism, so you have to know and follow these rules to author them (the eight necessary ones are <a href="#yamlrules">below</a>).  A very decent introduction is available <a href="https://en.wikipedia.org/wiki/YAML">here in Wikipedia</a>, but you need not visit it if you follow the Eight Rules.  Official documentation is available on <a href="http://yaml.org">yaml.org</a>, although hard to navigate.  <span class="smc">YAML</span> is not a language for expressing meaning, but for formatting statements for tools (such as the present ones) that impose their own meaning upon them.  Typical <span class="smc">YAML</span> looks like this:</p>
+<pre class="pfm">
+Composers:
+  Mussorgsky:
+    Nationality: Russian
+    Compositions: [Pictures at an Exhibition, Night on Bald Mountain,
+      "Godunov, Boris"]
+    Drink: Tea
+    Pet: Snails    #Not unusual in blue houses ...
+    Notes: {Beard: Yes, Weight: Obese}
+  Durufl&eacute;:
+    Nationality: French
+    Compositions: [Requiem, Organ Suite Op. 5, Ubi Caritas]
+    Drink: Wine
+    Pet: Cat
+</pre>
+
+<h4 id="installyaml">Installing YAML</h4>
+<p><span class="smc">YAML</span> packages are available for all computer languages now in common use, including both versions of python, but are not in the latter by default: you must obtain and install <tt>pyyaml</tt>, the python “port” of <span class="smc">YAML</span>, into your python, in order to use this tool set.  Fortunately, this is easy if your python was correctly and fully installed.  <tt>pip</tt>, the python package manager, will do it for you. You may or may not need <tt>sudo</tt> or administrative access to issue the appropriate command &mdash;</p>
+<pre class="pfm">
+pip install pyyaml 
+</pre>
+
+<p>which should take care of everything. To see if it succeeded, enter python and ask to import it (user input in red; exit python with control C or control D as appropriate to your system.)</p>
+<pre class="pfm">
+[bsg@mbpro-bsg songs]$ <span style="color:red"> python</span>
+Python 3.8.0 (v3.8.0:fa919fdf25, Oct 14 2019, 10:23:27) 
+[Clang 6.0 (clang-600.0.57)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+>>> <span style="color:red"> import yaml</span>
+>>>  <span style="color:red">^D</span>
+[bsg@mbpro-bsg songs]$  
+</pre>
+<p>If the import does not produce an error/stack trace, all is well.  If <tt>pip</tt> is not working for you, visit <a href="http://pyyaml.org">pyyaml.org</a>, and follow it to GitHub, here <a href="https://github.com/yaml/pyyaml">https://github.com/yaml/pyyaml</a>, download it as a zip file with the green button (I believe it is set up to work in either python 2 or 3), unzip it, and install by issuing the command line</p>
+<pre class="pfm">
+<tt>python setup.py install</tt>
+</pre>
+<p>from the top-level directory.  I’m not providing too much detail for this path, because <tt>pip</tt> should work, but I’ve said what you have to know.</p>
+
+<h4 id="yamlrules">YAML rules</h4>
+<p>Here are the eight basic <span class="smc">YAML</span> rules you must know to use these tools.  These rules are illustrated in the example above.:</p>
+<ul class="lid">
+  <li><b>TAB characters are prohibited</b>, and blank lines are ignored. Use spaces to indent.</li>
+  <li><b>#</b> is the comment character, when preceded by spaces.  All the rest of the line is a comment.</li>
+  <li><b>Mappings</b> are pairs of colon-separated left (<i>keys</i>) and right (<i>values</i>) sides, either on multiple lines (one line per pair), or comma-separated in {curly braces}. Colon must be followed by space(s).  When multi-line, no curly braces or commas are used.</li>
+  <li>Indentation is significant: sibling items in multi-line mappings must be indented identically.</li>
+  <li><b>Lists</b> are sequences of comma-separated items, the whole enclosed in [square brackets]. Lists can span multiple lines after commas; indentation on continuation lines is ignored.</li>
+  <li>Commas (in lists or mappings) must be followed by space (or newline) to be recognized.</li>
+  <li>Simple <b>tokens</b>/names/strings are everything else, <b>including spaces</b>, digits, periods, parentheses, etc., everything but colon, comma, [&nbsp;], and #.&nbsp;&nbsp;  ASCII double-quotes ("&nbsp;&nbsp") can be used to resolve any other ambiguity.</li>
+  <li>Mapping values and list items can be simple tokens, or more lists and mappings. Mapping keys must be simple tokens, but unique in a given mapping.</li>
+</ul>
+
+<p>If you use an editor with a so-called <span class="smc">YAML</span> mode, you can defer those worries about tabs and indentations to it. <tt>gedit</tt> has one, and <span class="smc">EMACS</span> and its Mac avatar <a href="http://aquamacs.org">Aquamacs</a> have one available <a href="https://github.com/yoshiki/yaml-mode">here on GitHub</a>.  You should assign <tt>.orgdef, .registration</tt> and <tt>.phrasing</tt> suffixes to it (see its <b>README</b> instructions).</p>
+
+<p>If you do not find a  <span class="smc">YAML</span> mode, you will doubtless put TAB characters in your file, and  <span class="smc">YAML</span> will complain:</p>
+<pre class="pfm">
+insreg: /Users/bsg/midi/py3/insreg.py modified: Fri Apr 10 14:17:23 2020
+In python 3.8.0 (v3.8.0:fa919fdf25, Oct 14 2019, 10:23:27) 
+<span style="color:red">YAML error:</span> while scanning for the next token
+found character '\t' that cannot start any token
+  in "Subj5.registration", line 8, column 2
+</pre>
+
+<p><span class="smc">YAML</span> (like many computer languages) refers to TAB as <tt><b>'\t'</b></tt> &mdash; you must know this to understand this error, which you will doubtless encounter!</p>
+
+<h2 id="midi">MIDI</h2>
+
+<p><span class="smc">MIDI</span>, the <b>M</b>usical <b>I</b>nstrument <b>D</b>igital <b>I</b>nterface, is an extensive and now venerable international protocol for representing notes and other controls played or to be played on electrically-controlled (not necessarily electronic!) instruments.  I have included a brief introduction to it <a href="dumpmidi.html#midi">here</a>, including pointers to further reference material.</p>
+
+<p><span class="smc">MIDI</span> includes a file format (“<span class="smc">MIDI</span> files”) by which music-processing programs, as well as computerized musical instruments, can exchange playable music (that is, a schedule of notes and controls to be “played”, without visual score formatting information).  <span class="smc">MIDI</span> files are playable by the VPO applications, when properly arranged, and can be produced by MuseScore and other score editors, and are the basic medium of this tool-set (whose main task is to so arrange them!).</p>
+
+<p> You are not required to understand the details of <span class="smc">MIDI</span> and its “events” to use this tool set, but, as they say, “it sure wouldn’t hurt”, particularly when trying to analyze problems, and, of course, to be able take advantage of <tt>dumpmidi</tt>. You can start <a href="dumpmidi.html#midi">here</a>.</p>
+
+<p>There are <span class="smc">MIDI</span> packages for all common programming languages.  The “standard” one for python, authored by one who goes by “Vishnu Bob”, is hosted on GitHub at <a style="text-decoration: line-through;color: grey"> https://github.com/vishnubob/python-midi</a>, but  <b style="color:red">do not download it.</b> It has a bug that causes the files it creates to (rightly) be rejected by Hauptwerk (and conceivably other “properly compliant” applications).  While several people have submitted various fixes to this package, including for that bug, the semi-Vedically-named developer has not appeared there in three years, so <tt>python-midi</tt> remains frozen and faulty.  My system therefore includes my own private upgrade of this package, fixing that and other bugs, but you do not have to take any special action to use it.  My code goes through arduous gymnastics to ensure that its own private version of <tt>midi</tt> is used, and not any other you may have acquired.</p>
+
+
+<h2 id="errors">Error handling &mdash; your errors vs. mine</h2>
+
+<p>All of these tools work hard to diagnose errors in usage, including inconsistencies between their input <span class="smc">MIDI</span> files and your scripts.  When a tool encounters a usage error, it reports it in a (hopefully) clean way, describing the error and the point (i.e., in the scripting for the composition) where it was encountered, like this:</p>
+
+<pre class="pfm">
+[bsg@mbpro-bsg songs]$ python insreg.py Subj5.registration 
+insreg: /Users/bsg/midi/py3/insreg.py modified: Fri Apr 10 14:17:23 2020
+In python 3.8.0 (v3.8.0:fa919fdf25, Oct 14 2019, 10:23:27) 
+insreg: /Users/bsg/midi/py3/insreg.py modified: Thu Dec 28 10:35:09 2017 
+Processing "Fugue sur subjet #5 du Conservatoire" by Bernard Greenberg
+    for organ at Doesburg
+Doesburg organ definition file /Users/bsg/midi/songs/Doesburg.orgdef
+Hauptwerk system definition file /Users/bsg/midi/songs/Hauptwerk.orgsysdef
+Registration error: <span style="color:red">at m+b 0+0: "Sillyflute 3'" not found in Doesburg "I".</span>
+[bsg@mbpro-bsg songs]$ 
+</pre>
+<p>The error is described on the last line before the tool returns to command level, after a slew of “normal”, putatively informative things printed by it. <span class="bmon0">m+b</span> will be explained <a href="#m+b">below</a>.</p>
+
+<p>If, however, you see a stream of technical-looking “gibberish” (computer code) like this, the program has “blown up” (exploded, crashed):</p>
+<pre class="pfm">
+[bsg@mbpro-bsg songs]$ python insreg.py Subj5.registration -c
+insreg: /Users/bsg/midi/py3/insreg.py modified: Fri Apr 10 14:17:23 2020
+In python 3.8.0 (v3.8.0:fa919fdf25, Oct 14 2019, 10:23:27)   
+Processing "Fugue sur subjet #5 du Conservatoire" by Bernard Greenberg
+    for organ at Doesburg
+Doesburg organ definition file /Users/bsg/midi/songs/Doesburg.orgdef
+Hauptwerk system definition file /Users/bsg/midi/songs/Hauptwerk.orgsysdef
+Traceback (most recent call last):
+  File "insreg.py", line 515, in <module>
+    main()    
+  File "insreg.py", line 492, in main
+    Converter(args).process_files(args.PieceDef, args.MidiPath)
+  File "insreg.py", line 302, in process_files
+    self.orgdef = Organ(organ_name)
+  File "/Users/bsg/midi/songs/organ.py", line 177, in __init__
+    self.load_yaml(path)
+  File "/Users/bsg/midi/songs/organ.py", line 230, in load_yaml
+    self.process_division_attributes(adr, division)
+  File "/Users/bsg/midi/songs/organ.py", line 284, in process_division_attributes
+    division.add_names(syns)
+  File "/Users/bsg/midi/songs/organ.py", line 507, in add_names
+    map(n, 3)
+TypeError: argument 2 to map() must support iteration
+[bsg@mbpro-bsg songs]$ 
+</pre>
+<p>This is a <i>stack trace</i>, and what python issues when it crashes due to a programming error (or inadequacy) in the python-coded program, as opposed to a user error detected by that program.  While this error <i>may have been caused by something you did wrong, it should not be crashing.</i>  It is always an error by me or something I could have done better if an error is not “handled”, and crashes in this manner. If this happens, please send me stack trace output such as the above, with a description of what you did to provoke it.</p>
+
+<h2 id="commonnotions">Common (shared) notions</h2>
+
+<p>These notions and rules are common to all tools in the suite, and must be understood fully in order to use them.</p>
+
+<h3 id="measurecounting">Measure counting</h3>
+
+<p><span class="smc">MIDI</span> files do not contain measure numbers. They do, however, contain markings of time signatures and time signature changes, and mark time in “ticks” which are fine subdivisions of a quarter-note, so while measure-numbering is impossible, measure-counting is easy. So, however you number your measures within MuseScore or any other tool, <tt>phraseit</tt>, <tt>insreg</tt>, <tt>dumpmidi</tt> and any other <span class="smc">MIDI</span>-processing tools you may have know nothing about it.   If you hope to direct these tools, or expect them to tag output, with measure-numbers you understand, they must know how your measures are numbered.</p>
+
+<p>The assumption that the first measure is Measure #1 is usually good, and that is the default assumption of all tools in this suite.  But there are two common cases in which this is incorrect.</p>
+<ul>
+<li><p>If you are excerpting the middle of a longer movement, you might use MuseScore’s measure offset option to number the first measure 39, 75, or whatever.  That renumbering doesn’t go in the <span class="smc">MIDI</span> file. You must tell <tt>phraseit</tt> and/or <tt>insreg</tt> by specifying</p>
+<pre class="pfm">
+FirstMeasure: 43
+</pre>
+  <p>or whatever in the phrasing and/or registration files, and <tt>dumpmidi</tt> with its <tt>-m</tt> control argument.  The default for this optional field is, of course, 1.</li>
+
+  <li><p>The second case is that of a score starting with an upbeat (or “pick-up”) measure.  If you tell MuseScore that you have one, it effectively numbers that measure 0, with the next, first “full”, measure being 1.  In that case, the default assumption of the first measure being #1 would be wrong.  So, you can surely say</p>
+<pre class="pfm">
+FirstMeasure: 0 
+</pre>
+<p> or, perhaps confusingly, or perhaps conveniently,</p>
+<pre class="pfm">
+Options: Upbeat
+</pre>
+<p> which is exactly equivalent.  It is confusing because it suggests that the tools care about whether or not there is a musical upbeat measure; they do not.  They only care about how to number the measures such that they know what you mean by the measure numbers in your scripting files. They must know if the first measure in the <span class="smc">MIDI</span> file is not considered to be measure #1.</p>
+  </li>
+  </ul>
+<p>Note again that repeated measures, i.e., musical double-bar repeats, <i>da capo</i>, etc., are <i>not</i> represented in the <span class="smc">MIDI</span> file; they are “spun out”, expanded, by MuseScore and other score tools. <b>Repeated sections occur, and are counted, the requested number of times</b>, as if they had been copied and pasted that many (minus one) times, or as if you were counting the measures of a performance. If you use repeats, you must be aware of the concomitant discrepancies in measure accounting.</p>
+
+  <h3 id="beats">Beat measurement and <span class="bmono">m+b</span> notation</h3>
+
+  <p>All of these tools have a need to identify beats, and fractional beats, within measures: for <tt>phraseit</tt> and <tt>insreg</tt>, it is to allow you accurately locate places in your score where phrasings and registration (or manual) changes are to applied.  In the case of <tt>dumpmidi</tt>, it is to allow the program to describe the points in the score corresponding to the <span class="smc">MIDI</span> events it reports. These tools utilize a consistent model of beat-counting.</p>
+
+  <p>In this tool set, beats of each measure are counted from 0, not 1 (which latter is usual in music teaching).  All measures start with 0. A four-beat measure goes from 0 to 3.99999... (better or worse than 1 to 4.99999...?). But the middle of a four-beat measure happily becomes beat 2 (decidedly better than beat 3).  You will incur diagnosed errors if you attempt to reference beat 4 of a four-beat measure; if you reference beat 1 as opposed to beat 0, you will simply misplace your phrasing or registration change.</p>
+
+  <p>One can view this as a way of measuring linear time, rather than assigning ordinal numbers to beats.  During your first year, you were not yet 1 year old.</p>
+
+
+<p>The musical time-value of one beat is generally the note unit of the denominator of the time signature in effect.  If the time signature is 4/4, it is a quarter note. If it is 3/8, it is an eighth note, etc.  But there are some exceptions:</p>
+    <dl>
+      <dt><b class="bmono">6/8, 9/8, 12/8</b></dt>
+      <dd>One beat is <b class="bmon0">3/8</b>. Note that <b class="bmon0">6/4, 9/4, 12/4</b> are <b><i>not</i></b> excepted in this way.</dd>
+      <dt><b class="bmono">2/2</b></dt>
+      <dd>One beat is <b class="bmon0">1/4</b>.</dd>
+    </dl>
+<p>It is possible that in the future a way of customizing this arbitrariness may be provided.</p>
+    <p>In the compound triplet times, numbers such as 1.33333 must be used to locate triple-time notes. Have at least four 3’s or 6’s (“rational behavior” guaranteed).</p>
+
+
+    <h3 id="localts">Staves with differing time signatures</h3>
+
+    <p>Real scores often feature staves with simultaneous differing time signatures, although measures “line up”. While one thinks first of <i>outr&eacute</i> modern or Balkan folk music, this is common even in Bach, <i>e.g.</i>, his renowned movement known as <i>Jesu, Joy of Man’s Desiring</i>, where 3/4 is juxtaposed with 9/8, which is another way of expressing triplets. This is not easy or obvious to do in MuseScore (see <a href="https://musescore.org/en/handbook/time-signatures#local-time-signatures">this link for how.</a>) and is buggy.  But these so-called <b>“local time signatures” <i>are not transmitted to <span class="smc">MIDI</span> files</i></b>.  That is, the 9/8 triplet eighth-notes in a 9/8 stave in a 3/4 score (as first created, or set by conventional time-signature “dropping”) appear as “triplets” in 3/4 time, <i>i.e.</i>, 3 against 2, and must be counted as such. The tools do not “see” local time signatures, as you can learn by re-importing to MuseScore a <span class="smc">MIDI</span> exported from a score having them.  The notes have the correct placements and lengths, but are reckoned in the truly regnant time signature.  <span class="smc">MIDI</span> “ticks”, most fortunately, represent an identical time interval in all tracks.</p>
+  
+
+<h3 id="m+b"><b>m+b</b></h3>
+    <p><span class="bmon0">m+b</span> (“measure plus beat”) is a formalism used by this suite for describing a musical point in a piece as such in one <span class="smc">YAML</span> “token”.</p>
+
+    <p>On input, in <tt>insreg</tt> and <tt>phraseit</tt>, an integer alone can be used if the beat is 0, i.e., the beginning of the measure, which is a very common place to insert registration changes or (in approach to it) phrasing.  Thus <span class="bmon0">43</span> in this notation is equivalent to <span class="bmon0">43+0</span>.</p>
+
+<p>Note that <span class="bmon0">2+.5</span> means “one-half beat into (the first beat) of measure 2”, as does <span class="bmon0">2+0.5</span>.  And, consistent with the above, <span class="bmon0">2+1.5</span> means one-half beat into Beat 1, which is the <i>second</i>, not the first, beat of the measure.</p>
+
+<p>You may <b>not</b> use common fractions (i.e., with slashes, e.g., <span class="bmon0">3/8</span>) for <span class="bmon0">m+b</span> notation; this allows for a flexibility in <tt>phraseit</tt> syntax that would otherwise not be available.</p>
+
+<p>END</p>

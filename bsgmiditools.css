@@ -1,0 +1,93 @@
+/* CSS for BSG MIDI tools documentation  -- Dec 2017 */
+
+body {
+    max-width:650px;
+}
+
+p {
+    margin: 0.0px 0.0px 0.0px 0.0px;
+    font: 18.0px TimesRoman;
+    color: #454545;
+    padding-left: 40px;
+    padding-bottom: 20px
+}
+
+p.pdft {
+    padding-left: 0px
+}
+
+dl {
+    padding-left: 60px;
+    margin-top: 0px;
+    padding-top: 0px;
+}
+
+.pfm {
+    font-family: monospace;
+    font-size: 120%;
+    white-space:pre;
+    padding-left: 50px;
+    padding-bottom: 0px;
+    padding-top: 0px;
+    padding-left: 60px;
+    margin-top: 0px;
+ 
+}
+
+dt {
+    font-weight: bold;
+}
+
+dd p {
+    font-size: 100%;
+    padding-left: 0px
+}
+
+h2 {
+    padding-left: 20px;
+}
+
+h3 {
+    padding-left: 40px;
+}
+
+h4 {
+    padding-left: 40px;
+}
+
+
+blockquote {
+    padding-left: 30px;
+}
+
+tt {
+    font: 80% Courier;
+    min-height: 12.0px;
+}
+
+ul {
+    padding-left: 80px;
+    margin-top: 0px;
+    color: #454545;
+}
+
+li {
+    padding-bottom: 15px;
+}
+
+ul.lid li {
+    padding-bottom: 0px;
+}
+
+.smc {
+    font: 85% TimesRoman;
+    min-height: 12.0px;
+}
+
+
+a[href^="http"] {
+    background-position: right center;
+    background-repeat: no-repeat;
+    background-image: linear-gradient(transparent, transparent), url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtODI2LjQyOSAtNjk4Ljc5MSkiPjxyZWN0IHdpZHRoPSI1Ljk4MiIgaGVpZ2h0PSI1Ljk4MiIgeD0iODI2LjkyOSIgeT0iNzAyLjMwOSIgZmlsbD0iI2ZmZiIgc3Ryb2tlPSIjMDZjIi8+PGc+PHBhdGggZD0iTTgzMS4xOTQgNjk4Ljc5MWg1LjIzNHY1LjM5MWwtMS41NzEgMS41NDUtMS4zMS0xLjMxLTIuNzI1IDIuNzI1LTIuNjg5LTIuNjg5IDIuODA4LTIuODA4LTEuMzExLTEuMzExeiIgZmlsbD0iIzA2ZiIvPjxwYXRoIGQ9Ik04MzUuNDI0IDY5OS43OTVsLjAyMiA0Ljg4NS0xLjgxNy0xLjgxNy0yLjg4MSAyLjg4MS0xLjIyOC0xLjIyOCAyLjg4MS0yLjg4MS0xLjg1MS0xLjg1MXoiIGZpbGw9IiNmZmYiLz48L2c+PC9nPjwvc3ZnPg==');
+    padding-right: 13px;
+}
