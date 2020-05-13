@@ -1,0 +1,173 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title>Phraseit documentation</title>
+  <link rel="stylesheet" href="bsgmiditools.css">
+</head>
+<body>
+<h1><tt style="font: 90% Courier;">Phraseit</tt> documentation</h1>
+<p>by Bernard Greenberg, December 2017 (version <b>1/9/2018</b>)</p>
+<h2>Introduction</h2>
+
+<p> <span style="color:red;font-weight:bold">(May 2020) This program is deprecated. It is only included to support earlier work.  The <a href="https://musescore.org/en/project/articulation-and-ornamentation-control">MuseScore Articulation Plugin</a> should be used to effect phrasing instead.</span> Plugin-mediated articulation is easier, more powerful, can be effected and tested during score entry, can be heard online, and persists in the score.</p>
+
+<p><tt>phraseit</tt> is a python program which traduces a given <span class="smc">MIDI</span> file to a new one as directed by a &ldquo;schedule&rdquo; telling it where to insert &ldquo;phrasing breaks&rdquo;.  The schedule lists exact places in the score, by measure and beat, for which notes <i>ending</i> at that measure and beat are to be &ldquo;cut back&rdquo; by a specified amount, which can vary from one place to another (the &ldquo;default default&rdquo; is one sixteenth-note).  By default, all notes in all tracks (i.e., staves, in MuseScore) of the score are cut back at the points specified; control exists to limit the action to only certain tracks.  Notes which &ldquo;play through&rdquo; the specified points are not affected. There is presently no way to affect a subset of the notes in a given staff that end at the desired points.</p>
+
+<p>The schedule is specified by a <tt>.phrasing</tt> file, which is in the <span class="smc">YAML</span> formalism, which is a fairly natural language of colon-terminated keywords, comma-separated lists in brackets, and curly-brace-enclosed &ldquo;mappings&rdquo;, comma-separated keyword-colon-value pairs. Please <a href="index.html#prerequisites">read here</a> for further information about python and <span class="smc">YAML</span>, including instructions for obtaining them and simple rules for the latter.</p>
+
+<p>The basic action taken by <tt>phraseit</tt> is best understood thusly: in the 1971 satire <a href="https://en.wikipedia.org/wiki/Bananas_(film)"><i>Bananas</i></a>, a populist rebel leader, upon attaining power, declares, “All children 16 years old and younger now <i>are</i> 16 years old!</i>”  What <tt>phraseit</tt> does is identical: you declare a “phrasing”, a length of silence, before a specific beat, and all notes ending in that (time) interval, including exactly at that beat, are clipped to the interval’s beginning: “All notes ending less than a sixteenth-note before beat 3 now end <i>exactly</i> a sixteenth note before beat 3!”</p>
+
+<p>Please see the accompanying <a href="index.html">“index” document</a> for common notions such as prerequisite software, measure- and beat-counting conventions, and error handling.</a>
+
+<h2>Sample <tt>phrasing</tt> file and basic fields</tt></h2>
+
+<pre class="pfm">
+Name: Hymnus Typografie
+Composer: &Eacute;mile Møgens Wöldike
+Options: Upbeats
+SourcePath: "~/Documents/MuseScore2/OutMidi/Typ.mid"
+Measures: [
+  {default_beat: 2},
+  5,
+  14,
+  [18, 3]
+  ]
+</pre>
+
+<p>One can immediately see the simple structure of <span class="smc">YAML</span>.  The text is <span class="smc">UTF-8</span>, so European diacritical marks are acceptable everywhere.  Note that <tt>SourcePath</tt> is in (<span class="smc">ASCII</span>) quotes.  This is necessary when colons or brackets or other <span class="smc">YAML</span> delimiters appear in these strings, and not strictly necessary here, but shown for variety/demonstration.  Please <a href="index.html#yaml">read here</a> for further information about <span class="smc">YAML</span>.</p>
+
+<p><tt>Name</tt> and <tt>Composer</tt> are required, if for no other reason than to allow other tools in this suite to make sure that &ldquo;driver&rdquo; files such as this have been paired correctly with each other.  While you might name files with abbreviations or mnemonics, this is where the full, real name of the composition belongs.</p>
+
+<p><tt>Options</tt> is not required unless you require some of the options.  <tt>Upbeats</tt> says that the first measure of the <span class="smc">MIDI</span> file is to be considered measure zero, not measure 1.  See <a href="#measurecounting"><b>Measure Counting</b></a> below.</p>
+
+<p><tt>SourcePath</tt> specifies the location of the <span class="smc">MIDI</span> file to use as input.  Right now, the output goes to a file in the same place with the same name, except <tt>.phrased.mid</tt> instead of <tt>.mid</tt>.  The <tt>-o</tt>/<tt>--opath</tt> command option can direct it elsewhere.</p>
+
+<p>When <tt>phraseit</tt> is used internally by <tt>insreg</tt>, it is not necessary to supply <tt>SourcePath</tt> in the phrasing file (and no phrased output file will be produced, in any case).</p>
+
+<p><tt>Measures</tt> is a  <span class="smc">YAML</span> &ldquo;list&rdquo;, which is always comma-separated and enclosed with square brackets, of &ldquo;phrasings&rdquo; each given on one line.  They must all appear with identical indentation. <b>Tabs may not be used in <span class="smc">YAML</span> files; this is a standard first-day error!</b>  The syntax and semantics of &ldquo;phrasings&rdquo; will be described next.</p>
+
+<h2>Phrasing details</h2>
+
+<p>Each phrasing is a conceptual quadruplet of quantities known as <tt><b>measure, beat, duration</b></tt>, and <tt><b>staves</b></tt>.  While you can specify them all in a <span class="smc">YAML</span> &ldquo;mapping&rdquo;, a major goal of this program is to make it easy for you so you generally don't.  A mapping in which they are all specified would look like this:</p>
+
+<pre class="pfm">
+{measure: 5, beat: 1.5, duration: 3/32, staves: [0, 1]}
+</pre>
+
+<p>The order in a <span class="smc">YAML</span> &ldquo;mapping&rdquo; is not significant. The spaces after colons and commas are significant.  I'll describe the meaning and details of these quantities before describing the abbreviated ways of specifying phrasings.</p>
+
+<p>
+<dl><dt><tt style="font: 120% Courier;"><b>measure</b></tt></dt>
+<dd><p>This element specifies the musical measure (bar) in which the phrasing is to occur.  It is important to realize that phrasings are specified by their <i>end</i>, i.e., the measure and beat <i>before</i> which they insert silence, hence, a phrasing <b>at the end of measure 4 is considered to be at the very start of measure 5</b>.  It is also important to know that the measure numbers that appear in MuseScore are not available; unless one of <tt>Upbeats</tt> or <tt>StartMeasure</tt> is specified, the first measure is assumed to be #1.  Repeated sections of score do not get repeated measure numbers!  Repeats will cause large problems; phrasings must be inserted in all occurrences of the repeat.  See <a href="#measurecounting"><b>Measure Counting</b></a> below.</p></dd>
+
+
+  <a name="beat"></a>
+  <dt><tt style="font: 120% Courier;"><b>beat</b></tt></dt>
+  <dd><p>This element specifies the beat within the specified measure <b>before</b> which the phrasing should be effected.  <b>Beat-counting is zero-origin; the start of a measure is beat 0, not beat 1.</b>  This method produces greater consistency for fractional beats and varying-length measures.  <b>Fractional beats must be specified as decimal fractions; <tt>a/b</tt> fractions may not be used.</b>  Thus, in a 4/4 measure,  the fourth sixteenth note of the first quarter note is beat <tt><b>0.75</b></tt>, while the third sixteenth note of the second quarter note is beat <tt><b>1.5</b></tt>.</p>
+
+    <p>Please see <a href="index.html#beats">this discussion</a> for further details of beat-counting, including anomalies involving triplet time signatures.</p>
+</dd>
+
+  
+
+<dt><tt style="font: 120% Courier;"><b>duration</b></tt></dt>
+<dd><p>Duration of a phrasing cutback is specified as a note-value, e.g., <tt>1/16</tt> means a sixteenth-note; here, &ldquo;slash&rdquo; fractions <i>must</i> be used.  Depending upon tempo and meter, larger or smaller durations than the default <tt>1/16</tt> may be appropriate, and, of course, they can be defaulted as well as different everywhere.  Durations may also be specified by user-assigned names.  The optional <tt>PhraseDefs</tt> field allows you define such names for later use in phrasings, e.g.,</p>
+
+<pre class="pfm" style="font-size: 100%">
+PhraseDefs: {default: 1/8, small: 1/16, tiny: 1/32, medium: 3/32}
+</pre>
+
+<p>The name <tt><b>default</b></tt> is specially-recognized, and makes that duration be the default duration unless (or until) overriden.</p>
+</dd>
+
+<dt><tt style="font: 120% Courier;"><b>staves</b></tt></dt>
+<dd><p>The default behavior is to scan for all notes in all staves for notes that end at the measure and beat specified in a phrasing (and leave notes persisting through it alone).  It is not uncommon for notes ending at the same place in different instruments (or manuals of an organ) to be phrased differently.  With the <tt>staves</tt> control, it is possible to limit the scope of a phrasing to specified staves (which appear as &ldquo;tracks&rdquo; in MuseScore's <span class="smc">MIDI</span> file).  Note that staves are numbered starting from zero, going down the score page.  &ldquo;Grand&rdquo; staves count as 2 or 3 as they are, not one, even though they only route all their notes to one channel.</p>
+
+<p>Note that there is currently no way to limit action to discrete same-ending notes within a single staff (possible future improvement).  Note also that, however long the duration of a phrasing is, no note is allowed to begin in the midst of it; should <tt>phraseit</tt> detect that, it will diagnose it clearly and abort.</p>
+
+<p>Staves are specified as either an integer (to limit to a single staff), or a comma-separated, square-bracket-enclosed  <span class="smc">YAML</span> &ldquo;list&rdquo; of staves to be processed (as integers).</p>
+
+</dd>
+
+</dl>
+
+<h2>Default-setting &ldquo;phrasings&rdquo; that aren&rsquo;t really phrasings</h2>
+
+<p>Instructions to set the default <tt><b>beat</b></tt> and/or <tt><b>duration</b></tt> may be placed in the stream of &ldquo;phrasing&rdquo;s, setting one or both of these until another appears; in any case, all quantities can be overriden in a specific phrasing.  These instructions look like mapping-style phrasings, and appear in their stream, e.g., </p>
+
+<pre class="pfm">{default_beat: 2},  #between end of second and third beats
+...
+{default_duration: tiny},
+</pre>
+
+<p>These directives can also be inserted (one or both) into a real phrasing, in which case they take effect with that phrasing, e.g.,</p>
+
+
+<pre class="pfm">{default_beat: 3, measure:5, duration: 3/32}   
+</pre>
+
+
+<h2>Abbreviated phrasing forms (samples)</h2>
+
+<p>Note that <tt><b>measure</b></tt> cannot be defaulted; even these abbreviated forms all require a measure to be identified. Note also that <tt><b>staves</b></tt> cannot be defaulted (to other than &ldquo;all staves&rdquo;). If staff limiting is needed in a phrasing, the &ldquo;mapping&rdquo; form (i.e., not these abbreviated forms) must be used.</p>
+<p>Don&rsquo;t forget that space is required after commas in lists!</p>
+<dl>
+  <dt><tt style="font: 100% Courier;">3</tt></dt>
+  <dd><p>A single integer designates a measure number, all staves.  The current default beat and default duration are used.  Equal default beats happen regularly in well-designed traditional music.</p></dd>
+
+  <dt><tt style="font: 100% Courier;">[3, 2]</tt></dt>
+  <dt><tt style="font: 100% Courier;">[3, 2.75]</tt></dt>
+  <dd><p>A two-element list of an integer measure number and another integer or decimal float specifies a phrasing at (i.e., directly preceding) that measure and that beat, all staves, and of the current default duration (which can be a user-defined designator, too).</p></dd>
+  <dt><tt style="font: 100% Courier;">[3, 1/16]</tt></dt>
+  <dt><tt style="font: 100% Courier;">[3, mydur]</tt></dt>
+  <dd><p>A two-element list of an integer measure number and a slash-fraction or user-defined duration designator specifies a phrasing at (i.e., directly preceding) that measure and the current default beat, all staves, of that duration.</p></dd>
+
+  <dt><tt style="font: 100% Courier;">[3, 2.5, 3/32]</tt></dt>
+  <dd><p>A three-element list must be a measure, a beat, and a duration, applied to all staves.</p></dd>
+
+
+</dl>
+
+<a name="measurecounting"></a>
+<h2>Measure counting</h2>
+
+<p><span class="smc">MIDI</span> files do not contain measure numbers. However you number your measures with MuseScore or any other tool, <tt>phraseit</tt> and other <span class="smc">MIDI</span>-processing tools know nothing about it.   Clearly, if you are to direct <tt>phraseit</tt> with measure numbers, it must know how your measures are numbered.  This is an issue if there are “upbeat” (or “pick-up”) measures, usually “before measure 1”, a score starting in the middle of a movement, or “repeats”.  You might have to say</p>
+<pre class="pfm">
+FirstMeasure: 43
+<span style="font-family:roman;font-size: 80%;font-style: italic">or</span>
+Options: Upbeat
+</pre>
+<p>if the first measure is not Measure #1.  See <a href="index.html#measurecounting">this discussion</a> for further detail.</p>
+
+<h2>Command usage</h2>
+<p><tt>phraseit</tt> being a python program, it must be invoked with the python interpreter, with its own arguments following, e.g.,</p>
+
+<pre class="pfm">
+python phraseit.py SongOfTheNorthwest.phrasing
+</pre>
+<p>The command accepts a <tt>-h</tt> &ldquo;help&rdquo; argument list its capabilities, among which is a <tt>-v</tt> (<tt>--verbose</tt>) argument to produce descriptions of its actions, in specific.  You shouldn&rsquo;t generally need any of them. Note that <tt>python</tt> must be inserted before <tt>phraseit.py</tt>, and control arguments follow that (i.e., not immediately after <tt>python</tt>).  The program's &ldquo;help message&rdquo; follows:
+</p>
+
+<blockquote><pre>
+usage: phraseit.py [-h] [-o path] [-c] [-n] [-l] [-v] PieceDef [MidiPath]
+
+Add phrasing breaks to MuseScore midi
+
+positional arguments:
+  PieceDef              Text (YAML) definition of piece and phrasings
+  MidiPath              Optional midi path, override one in PieceDef
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o path, --opath path
+                        output path; default inpath.phrased.mid
+  -c, --check           don't write, just check and process
+  -n, --notes           report 'noteOn/Off' events
+  -l, --list            report compiled phrasing schedule
+  -v, --verbose         report actions taken
+</pre></blockquote>
+</p>
+</body>
+</html>

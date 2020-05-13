@@ -1,0 +1,232 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title>Dumpmidi documentation</title>
+  <link rel="stylesheet" href="bsgmiditools.css">
+</head>
+<body>
+<div style="height: 10px"></div>
+<h1><tt style="font: 90% Courier;">dumpmidi</tt> <span class="smc">MIDI</span> inspector documentation</h1>
+<p class="pdft">by Bernard Greenberg, December 2017 (version of <b>1/9/2018 08:00</b>)</p>
+<p class="pdft" style="padding-bottom:30px"></p>
+
+<p><b>VPOMIDITools</b> Copyright © 2016-2020 by Bernard Greenberg. GNU General Public License Version 3 applies. Please see <a href="LICENSE">LICENSE</a> for details.</p>
+
+
+<h2>Introduction</h2>
+
+<p><tt>dumpmidi</tt> is a python program that inspects <span class="smc">MIDI</span> files, i.e., dumping their summarized or detailed (the default) content as intelligible tables and text to the console. It uses my private/improved version of “Vishnu Bob”’s <span class="smc">MIDI</span> package (included). Unlike many other <span class="smc">MIDI</span> tools, it provides the (optional) capability of inspecting badly-formed, i.e., “broken”, <span class="smc">MIDI</span> files, showing and identifying content up to the point of error.</p>
+
+<p>You must have an operative python system (Version 3) to use this package. See <a href="index.html#python">here in the “index” document</a> for further info.</p>
+
+<h2>Basic usage</h2>
+<p>
+<pre class="pfm">
+    python dumpmidi.py MySong.mid |more
+
+    python dumpmidi.py MySong.mid -b
+
+    python dumpmidi.py --help
+</pre></p>
+<p>Note that unless <tt>-b (--brief)</tt> is given, you will likely want to use <tt>|more</tt> to halt the output by screens. The sole required argument is the pathname of a <span class="smc">MIDI</span> file to inspect.</p>
+
+<p><tt>dumpmidi</tt> has a fairly extensive “help message” which well describes its capabilities and output format. It is reproduced (in its current state) here:</p>
+<pre class="pfm" style="font-size: 90%">
+    usage: dumpmidi.py [-h] [-b] [-c] [-f meas#] [-i] [-m meas#] [-s] [-t meas#]
+                       [-T tk,tk,tk] [-x]
+                       path
+
+    Dump <span class="smc">MIDI</span> file as events, with tracks and relative ticks, and optionally
+    real-time seconds and/or file position. Default mode is to use standard MIDI readin.
+    In incremental (-i) mode, will read file and dump one event at a time, to facilitate
+    debugging malformed files. Output format explained below.
+
+    positional arguments:
+      path                  file to dump
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -b, --brief           Only show track summaries, no notes or other events.
+      -c, --check           Check file for Status Byte cancellation failures.
+                            Reports, and returns error status to shell if present.
+      -f meas#, --from meas#
+                            First measure number to dump.
+      -i, --incremental     Read file (possibly malformed) incrementally,
+                            additionally displaying event addresses and lengths.
+      -m meas#, --measure meas#
+                            Number of first measure in file, default 1, which is
+                            wrong for upbeats.
+      -s, --seconds         Show real-time seconds pos. of each event.
+      -t meas#, --to meas#  Last measure number to dump.
+      -T tk,tk,tk, --Track tk,tk,tk
+                            Only dump certain tracks; cannot be used with -i
+      -x, --hex             Dump events in hex as well; requires -i, e.g., -ix
+
+    Event output format:
+      168.537 215  4  2 2   1439    8639  Off C 3 4+2.998
+    [seconds][AAA  L] T C   RRRR    BBBB  ddddddd m+b
+     AAA L = file byte address & length, present only with -i.
+     T = Track#, C=Channel# (when applicable)
+     RRRR = relative tick stored in event, BBBB = track-accumulated absolute tick
+     ddddd = event-specific data, m+b = measure and beat (beat 0 relative)
+     seconds = real-time location of event, present only with -s.
+     C 3 is standard pitch notation (i.e., an octave below middle C)
+</pre>
+<a name="midi"></a>
+<h2>A MINI-<span class="smc" style="font-weight: bold">MIDI</span> refresher</h2>
+
+<p><span class="smc">MIDI</span> (<b>M</b>usical <b>I</b>nstrument <b>D</b>igital <b>I</b>nterface) is an electrical data protocol by which music-automating programs or devices (such as keyboards and drum pads) called <i>controllers</i> send instructions to electronic <i>instruments</i> (from all natures of synthesizers to actual pipe organs) to “play”, just as the drum of a player-piano sends commands by air pressure to devices activating its keys. These commands are sent over a 5-pin cable, or sometimes USB, as bursts of bytes, usually just a few (but sometimes a dozen or more) at the time a given note is to be played or released, or a control such as volume or left-right “pan” is to be adjusted. Each such burst of bytes is called an “event”. Most events include a channel number, from 0 to 15, saying for which of many possible instruments listening the command is intended (it gets complex when there are more than 16). Instruments must know their own channel number. Some complex instruments (e.g., virtual (or real) pipe organs) answer as many channels, i.e., one for each manual (keyboard) and pedals.</p>
+
+<p><span class="smc">MIDI</span> controllers and instruments use a numerical representation of note-pitches where 0 is the C two octaves below the bass clef, below the lowest note of the pianoforte, and go up to 127, well above the piano. <span class="smc">MIDI</span> is profoundly equal-tempered; there are twelve <span class="smc">MIDI</span> pitches per octave, and distinction between, say, D# and E&flat; is impossible.</p>
+
+<p>Note also, no pun intended, that <span class="smc">MIDI</span> instruments (or, more accurately, <span class="smc">MIDI</span> channels or single-channel instruments) implement what I call a “keyboard model”, as do real pianos, harpsichords, organs and keyboard synthesizers, but not choruses or string instruments. That is to say, any note is <i><b>either on or off at any time</b></i>; that is, while multiple notes may indeed be played, and multiple polyphonic “voices” represented,<i> when such voices coincide/collide, i.e., sound “unison”, only one note can possibly sound</i>. This is a profound issue. Please see <a href="https://musescore.com/groups/3642106/discuss/3663846">this discussion of mine</a> on MuseScore.</p>
+
+<p><span class="smc">MIDI</span> events are of four types:</p>
+
+<dl>
+<dt>Note Events</dt>
+<dd><p>
+    These events specify a note on a given channel and a “velocity” (i.e., how hard/quickly to strike or release the note), and are of two kinds, <tt>NoteOn</tt> and <tt>NoteOff</tt>. MuseScore and some other programs don’t use <tt>NoteOff</tt>, but, for efficiency, use <tt>NoteOn</tt> with a velocity of 0 to mark the end of a note, and <span class="smc">MIDI</span> instruments know to treat it as such.</p></dd>
+<dt>Channel-specific control Events</dt>
+<dd><p>
+    These are protocol-defined, channel-specific events other than notes. They include changes to parameters such as volume, pan, and “pitch wheels” as well as specification of instrument on synthesizers. They also include a vocabulary of “control change” which is extensible.</p></dd>
+
+
+<dt>System-Exclusive (“Sysex”) Events</dt>
+<dd><p>
+    These commands are not defined by the <span class="smc">MIDI</span> protocol, but by specific <span class="smc">MIDI</span> instruments and programs or other devices controlling them that understand them. For instance, the control of the stops of an organ. There are “extensible” areas of the control change space as well, but the Sysex format provides for arbitrary-length strings of bytes. The format includes a unique, registered identifier of a vendor and instrument device.</p></dt>
+<dt>Meta Events</dt>
+<dd><p>
+These “events” occur in  <span class="smc">MIDI</span> files, to be discussed, in the stream of other events, but are not actually sent between controllers and instruments.
+They include non-channel-specific status markings such as text quantities, including lyrics (MuseScore does not output lyrics to <span class="smc">MIDI</span>), time signature and tempo indications, needed by programs interpreting <span class="smc">MIDI</span> needing to control the broadcast of other events.  An important subclass of meta events are those containing text.</p></dd>
+
+
+
+</dl>
+<p><span class="smc">MIDI</span> is defined by <a href="http://midi.org">midi.org</a>, but inspecting their documents requires registration. <a href="http://midi.teragonaudio.com/tech/miditech.htm">This page</a> at Teragon Audio provides a very usable detailing of the <span class="smc">MIDI</span> protocol. You must refer to this or another telling to learn the types and meanings of the defined Meta and control events. </p>
+
+<h3>Sequencers</h3>
+
+<p>There is a special class of controllers called <i>sequencers</i>, which automatically “play music” from scores or files or other representations by sending <span class="smc">MIDI</span> events to connected (or built-in) <span class="smc">MIDI</span>-controlled instruments at their scheduled times.  MuseScore is such a sequencer, although its ability to output <span class="smc">MIDI</span> to connected instruments (other than its own internal synthesizer) is a well-kept secret (and its use discouraged by its developers).  The VPO applications, when playing from <span class="smc">MIDI</span> files, may be considered sequencers, too, but (usually) output only to their own internal engines (but they can participate in the control of <span class="smc">MIDI</span>-controlled pipe organs).</p>
+
+<h2><span class="smc"><b>MIDI</b></span> Files — what you need to know</h2>
+
+<p>In addition to being sent over wires between controllers and instruments in real-time, <span class="smc">MIDI</span> events may be stored in files defined by the protocol (“<span class="smc">MIDI</span> file”), each marked with time, relative to the start of the file/piece, when the event is to be broadcast. Each event is marked with a “tick” time (for purposes of space-saving, relative to the previous event, not absolute). “Ticks” are usually 1/480 of a quarter-note (the start of the file specifies this number, “resolution”), and are not dependent on real-time (this is why it is impossible to represent “breath pauses”). Programs interpreting the file must be aware of tempo and time-signatures at each point in the file, and <span class="smc">MIDI</span> files contain appropriately tick-tagged meta events to specify both of those parameters. There are defaults defined by the protocol. </p>
+
+<p><a href="http://midi.teragonaudio.com/tech/midifile.htm">This page</a> of of the aforementioned site defines <span class="smc">MIDI</span> file format (<span class="smc">SMF</span>, “Standard <span class="smc">MIDI</span> File”). MuseScore and other score editors can optionally write <span class="smc">MIDI</span> files, although such files always contain far less information than their native formats, but can fully “play” the work they represent. </p>
+
+<p><span class="smc">MIDI</span> files consist of header, specifying version, “resolution” as discussed, and the number of <i>tracks</i>, which contain the events, followed by the content of those tracks. The tracks do not bear explicit numbers, but it is conventional to call the first one zero. The protocol says that track 0 should not contain note events, i.e., only contain control and time signature/tempo events, and they should all be in track 0, but MuseScore (and maybe other programs and devices) ignore this, both on output and input. </p>
+
+<p>Tracks are time-linear sequences of tick-tagged events, all starting together at the beginning of the piece, to be “played” in parallel. Track is not the same as channel; track is an artifact of <span class="smc">MIDI</span> files, not the <span class="smc">MIDI</span> protocol. A track is conceptually something that can be turned on or off, played or not played, as if controlled by switches on the panel of a recording engineeer. MuseScore creates one track per staff, whether or not an instrument (such as piano) requires more than one staff (the so-called <i>grand staff</i>), or the staff is hidden. A single track may contain events for more than one channel (but all notes on any staff of a grand staff output to the same channel). MuseScore uses this for <i>con sordino</i> and <i>pizzicato</i> effects on string instruments, to which it assigns separate channels, but not otherwise; in particular, it is currently (unfortunately) impossible to assign different channels to multiple MuseScore/polyphonic “voices” on a staff. Thus, if no string instruments or piano or organs are used in MuseScore, the correspondence of staves and tracks to channels is 1:1:1, but this is not useful. </p>
+
+<p>The <span class="smc">MIDI</span> file format defines a “hack” optimization for the space required by successive commands of the same type to the same channel. This is why MuseScore uses <tt>NoteOn</tt> with velocity 0 instead of <tt>NoteOff</tt>. However, “Vishnu Bob”’s python <span class="smc">MIDI</span> package implements this protocol in a faulty manner, causing some files it writes to cause some software (e.g., Hauptwerk) to crash. That is why I have my private version of this package, which is used here. It fixes this bug, and diagnoses bad files reflecting its handiwork. </p>
+
+<p><tt>dumpmidi</tt>’s basic function is to describe (dump) all the events in each track of the <span class="smc">MIDI</span> file to which it is directed. It dumps each track in succession, and can be directed (<tt>-T</tt> control argument) to dump only one or more specific tracks. </p>
+
+<p>Each track dumped by <tt>dumpmidi</tt> (when not in “incremental mode”, for obvious reasons) is preceded by a content summary header such as this:</p>
+<pre class="pfm">
+    Track  0: Meta 80, Control/ch: 0:6, Notes/ch: 0:246
+</pre>
+<p>This says that Track 0 contains 80 meta events, 6 channel-specific control events, all for Channel 0, no Sysex events (they are not mentioned), and 246 note events, also all for Channel 0. </p>
+
+<p>MuseScore cannot produce Sysex events, because it has no knowledge of performance instruments other than itself, and has no facility to enter <span class="smc">MIDI</span> information transparently.
+<h2>Time and tempo models</h2>
+
+<p>There are three ways of measuring time that are relevant to <span class="smc">MIDI</span> files:</p>
+<ul>
+  <li>The tiny “ticks” by which <span class="smc">MIDI</span> reckons musical time and tags events</li>
+  <li>Measures, beats, and fractions of beats, by which musicians measure musical time</li>
+  <li>Real-time seconds and fractions thereof measured on a wall clock.</li>
+</ul>
+<p><tt>dumpmidi</tt> and other tools of this suite build <i>models</i> to correlate these three time scales.</p>
+
+<p>In order for a <span class="smc">MIDI</span> musician to correlate events in a <span class="smc">MIDI</span> file to beats and measures on his or her score, whether for debugging problems or for preparing schedules of phrasings, registration changes, etc., it is necessary for these programs to build a time-signature model of a piece, that is, a database of how many measures follow each time signature whenever one occurs (they are indicated in the <span class="smc">MIDI</span> files by <tt>Time Signature</tt> meta events) so that locations specified by measure and beat may be translated into <span class="smc">MIDI</span> ticks and vice versa. If the first measure of the piece is other than Measure 1, which is true for pieces with upbeats (then it’s 0), or excerpts from larger movements. In either of these cases, you must tell <tt>dumpmidi</tt> the expected measure number of the first measure with the <tt>-m</tt> control argument if you expect to understand the measure numbers it reports in terms of your score. </p>
+
+<p><tt>dumpmidi</tt> always reports its complete “time model” at the beginning of its output. Each TME (time model element) is one contiguous stretch of complete measure of time signature occuring at their start (Note that <span class="smc">MIDI</span> has a 4/4 default if your score has none). The time model presentation looks like this:</p>
+<pre class="pfm">
+    TME 0: @ticks     0 m  1, sig (1, 4) beat 1/4 tpb 480 bpm 1 len T/B/M (480 1 1)
+    TME 1: @ticks   480 m  2, sig (4, 4) beat 1/4 tpb 480 bpm 4 len T/B/M (5760 12 3)
+    TME 2: @ticks  6240 m  5, sig (3, 4) beat 1/4 tpb 480 bpm 3 len T/B/M (1440 3 1)
+    TME 3: @ticks  7680 m  6, sig (1, 4) beat 1/4 tpb 480 bpm 1 len T/B/M (480 1 1)
+    TME 4: @ticks  8160 m  7, sig (4, 4) beat 1/4 tpb 480 bpm 4 len T/B/M (13440 28 7)
+    TME 5: @ticks 21600 m 14, sig (3, 4) beat 1/4 tpb 480 bpm 3 len T/B/M (1440 3 1)
+    TME 6: @ticks 23040 m 15, sig (1, 4) beat 1/4 tpb 480 bpm 1 len T/B/M (480 1 1)
+    TME 7: @ticks 23520 m 16, sig (4, 4) beat 1/4 tpb 480 bpm 4 len T/B/M (13440 28 7)
+    TME 8: @ticks 36960 m 23, sig (3, 4) beat 1/4 tpb 480 bpm 3 len T/B/M (1440 3 1)
+    END at tick 38400 = m. 24
+</pre>
+<p>A time model line describing an element contains: </p>
+
+<ul>
+    <li>Its sequence number, starting at 0
+    <li>The absolute tick count from the beginning of the piece at which it starts.</li>
+    <li>The measure number, as above, from the beginning of the piece at which it starts.</li>
+    <li>Its time signature as a pair of (numerator, denominator).</li>
+    <li>The music-metric value of a “beat”, with respect to which positions of beats within a measure will be reported (and by other tools, understood).</li>
+    <li>Beats per measure, of that length, which is not always the same as the beat numerator.
+    <li>The length of the element, in ticks, beats, and measures, respectively.</li>
+</ul>
+<p>Note that repeats and multiple endings damage measure-accounting significantly. If you have organ registration changes in your <i>Barform</i> (A A B, the most common kind) chorale-preludes, this means you. Repeats and multiple endings do not occur in <span class="smc">MIDI</span> files, but are “expanded” by MuseScore and other score editors, “spun out” into <span class="smc">MIDI</span> as they should be played. Thus, the first measure after a 10-measure singly repeated opening is measure 21, not 11, and there is no way that <tt>dumpmidi</tt> can help you here. </p>
+
+<p><tt>dumpmidi</tt> also builds a “real-time model”, or “tempo model”, by means of which the exact real-time occurence time (with respect to the beginning of the piece) each event occurs. If you give the <tt>-s (--seconds)</tt> control argument, it will prepend an exact real-time to each event it reports. You can then find notes with a stopwatch. If you do ask for this, <tt>dumpmidi</tt> will report its real-time model, which looks like this:</p>
+<pre class="pfm">
+    TmpE  0 mb 1+0      tick     0 sec   0.00: 120.0 qt/m,  960 ticks/sec. Len   480 ticks =   0.500 sec
+    TmpE  1 mb 2+0      tick   480 sec   0.50: 112.1 qt/m,  897 ticks/sec. Len   719 ticks =   0.801 sec
+    TmpE  2 mb 2+1.498  tick  1199 sec   1.30: 120.0 qt/m,  960 ticks/sec. Len   721 ticks =   0.751 sec
+    TmpE  3 mb 2+3.0    tick  1920 sec   2.05: 114.3 qt/m,  914 ticks/sec. Len   479 ticks =   0.524 sec
+    TmpE  4 mb 2+3.998  tick  2399 sec   2.58: 120.0 qt/m,  960 ticks/sec. Len  1441 ticks =   1.501 sec
+    TmpE  5 mb 3+3.0    tick  3840 sec   4.08: 114.0 qt/m,  912 ticks/sec. Len   480 ticks =   0.526 sec
+    TmpE  6 mb 4+0      tick  4320 sec   4.60: 106.5 qt/m,  852 ticks/sec. Len   479 ticks =   0.562 sec
+    TmpE  7 mb 4+0.998  tick  4799 sec   5.17: 114.0 qt/m,  912 ticks/sec. Len     1 ticks =   0.001 sec
+    TmpE  8 mb 4+1.0    tick  4800 sec   5.17: 110.0 qt/m,  880 ticks/sec. Len  1440 ticks =   1.636 sec
+</pre>
+<p>Each “tempo element” corresponds to a contiguous extent of the score in one tempo; tempi are changed not only by explicit metronone indications, but by fermatas and other ornaments whose “Time-Stretch” is set to other than its default 1.0. Each tempo element displays:</p>
+<ul>
+    <li>Its sequence number, not of great interest.</li>
+    <li>The <tt>m+b</tt> (measure and beat) at which this change occurs (i.e., where the extent begins). Note that beats relative to a measure are 0-originned; that allows the real-number beat to represent a consistent quantity. The start of a measure is beat 0; the last beat of a 4/4 measure is beat 3. See <a href="index.html#m+b">here</a>. </li>
+    <li>The absolute tick from the beginning of the piece where this change occurs </li>
+    <li>The absolute real-time, in seconds and fractions of a second, from the beginning of the piece where this change occurs </li>
+    <li>The tempo, in quarter-notes per minute, of this extent </li>
+    <li>The same tempo, computed in ticks per second </li>
+    <li>The length of this extent in ticks and in seconds and fractions of a second at that tempo </li>
+</ul>
+<h2>Line output</h2>
+
+<p>Here is some typical output from a <tt>dumpmidi</tt> event dump. If you specify <tt>-b (--brief)</tt>, <tt>dumpmidi</tt> will not display any events at all, but just model, status, and summary information.</p>
+<pre class="pfm">
+    0      960    7200  5+2.0    Set Tempo:  97.087 q/min, data [9, 110, 17]
+    0      479    7679  5+2.998  Set Tempo: 110 q/min, data [8, 82, 176]
+    0        1    7680  6+0      Time Signature: 1 / 4
+    0        0    7680  6+0      Set Tempo: 117 q/min, data [7, 211, 53]
+    0 0      0    7680  On   E 4 6+0
+    0 0      0    7680  On   E 4 6+0
+    0 0    479    8159  Off0 E 4 6+0.998
+</pre>
+<p>One line is displayed per event. The first four here are meta events; the last three are note events. The column all the way at the left is the track number, from zero; all tracks are dumped in order, so it is expectable that these are all the same here. The 0 to the immediate right of the track number is the channel number specified by the event; meta events do not specify one. </p>
+
+<p>Following the track and channel, the time, in ticks, when the event occurs is given as two numbers, the first being the “relative tick” (from the last event) as it occurs in the file, and the second the “absolute tick” from the beginning of the track, amassed by cumulating the relative ticks. Note that many notes end “a very short time” (e.g., one tick) before a normal beat, hence, the .998. </p>
+
+<p>The remaining fields vary somewhat between various kinds of events. The measure and beat equal to the absolute tick (computed via the time model) is always given as <tt>m+b</tt> (see <a href="index.html#m+b">here</a>); again, beat is always 0-originned within a measure. Note events specify the pitch of the note in <a href="https://en.wikipedia.org/wiki/Scientific_pitch_notation">scientific pitch notation</a> (“black notes” are alwas given as sharps, not flats; the key signature is not used in this assessment). <tt>Off0</tt> means a <tt>NoteOn</tt> event with 0 velocity, which is a way of turning a note off. Velocities other than 0 or 80 are noted when they appear with additional text. <tt>dumpmidi</tt> interprets the meaning of meta events, e.g., the tempo indicated by <tt>Set Tempo</tt> events. For some, the raw <span class="smc">MIDI</span> “data” is dumped as decimal numbers. </p>
+
+<h2>Command features and incremental mode</h2>
+
+<p>The meanings of almost all of the command features listed at the beginning of this document should be clear now. <tt>-c</tt> is obscure, unnecessary for users, and you may ignore it. <tt>-x</tt> can be used to see the actual bytes of <span class="smc">MIDI</span> file, message-by-message. It can only be used in incremental (<tt>-i</tt>) mode. <tt>-f</tt> and <tt>-t</tt> may be used to limit the dumping to only certain measures, and <tt>-T</tt> to certain tracks. These may not be used in incremental mode. </p>
+
+<p>Incremental mode (<tt>-i, --incremental</tt>) is a powerful feature that is of value in debugging ill-formed <span class="smc">MIDI</span> files. Standard <span class="smc">MIDI</span> programming packages (including “Vishnu Bob”’s), very expectably, first “read in” a <span class="smc">MIDI</span> file, then create structures that programmers may examine via their API’s. This is of no use in debugging a badly-formed file, as the very first step (read it in) will fail/crash. When -i is given, <tt>dumpmidi</tt> exploits clever code I have written exploiting python’s continuation/closure features to read and dump <span class="smc">MIDI</span> files one event at a time, so that if a problem is encountered, even one crashing <tt>dumpmidi</tt>, its precise location in musical units and file position will be known. To this end, <tt>dumpmidi</tt> prepends file location and event-length (both in bytes) when invoked in this mode:</p>
+<pre class="pfm">
+    Decoding in incremental mode.
+
+    20 tracks. Resolution=480, format 1
+    <span style="color:red">fadr ln</span>  t# chn relT   absT  m+beat
+
+    TRACK    0 @ byte 14, byte length 1453
+      22  8  0        0       0  TIME SIGNATURE 1/4 @ 1+0
+      30  6  0        0       0  1+0      Key Signature: G major/E minor
+      36  7  0        0       0  1+0      Set Tempo: 120 q/min, data [7, 161, 32]
+      43  4  0 0      0       0  1+0      Control Change: Reset All Controllers (121
+
+</pre>
+
+<p>END</p>

@@ -1,0 +1,184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title>VPO change log</title>
+  <link rel="stylesheet" href="bsgmiditools.css">
+  <style>
+ul {padding-left: 0px }
+li {font-size: 110%;}
+dt {font-size: 120%}
+.uli {padding-left: 30px;font-size: 80%}
+  </style>
+</head>
+<body>
+<div style="height: 10px"></div>
+
+
+<h1>BSG VPO system changes log</h1>
+<h1>Reverse-chronological by “<tt>insreg</tt> distro” ##</h1>
+
+<dl>
+  <dt>1.0.12</dt>
+  <dd><ul>
+    <li>(20 Apr 2020) Fixes a bug in 1.0.11 time-signature embedding
+  fix.  Rather than crash, it would produce a <span
+  class="smc">MIDI</span> that would cause the VPO to output an
+    infinite note.</li>
+    </ul>
+    </dd>
+  <dt>1.0.11</dt>
+ <dd> <ul>
+   <li>(10 Apr 2020) A bug which caused <tt>insreg</tt> to fail with a
+   message about out-of-order events when a time-signature change
+   occurs within a composition was fixed.  This bug did not
+   occur when <tt>-O</tt> (old conversion code) was used.  It is hard
+   to believe that the new code had not encountered a time-signature
+   change until now, yet, so it must be.</li>
+   
+   <li>(7 Oct 2019) Elimination of zero-length notes.  MuseScore creates these as
+  part of its solution to the &ldquo;unison collision&rdquo; problem.
+  They occur when two identical notes overlap, such as a soprano and
+  alto coinciding in closed-score (being used as input to a VPO application).
+  Until now, <tt>insreg</tt> passed these through to the VPO
+  applications, both of which seemed to handle them properly, i.e.,
+  ignore them, but they do cause problems when the <span
+  class="smc">MIDI</span> file is read back into MuseScore. And they
+  just don&rsquo;t belong there. In verbose mode, the activity is
+  traced; otherwise, its result is summarized.</li>
+  
+  <li>(7 Oct 2019). The <tt>phraseit</tt> facility should not be used
+  for new work.  It was designed as a remedy for the lack of easy phrasing in
+  MuseScore, which latter is now available via the <a
+  href="https://musescore.org/en/project/articulation-and-ornamentation-control">MuseScore
+  Articulation Plugin</a> starting with MuseScore 3.3.  Directly
+  imparting phrasing to the score with this tool is highly preferable to
+  and easier than <tt>phraseit</tt>.
+  </li>
+
+</ul></dd>
+
+<dd>  <ul>
+   <li>Support for Piotr Grabowski's &ldquo;Green Positiv&rdquo;, under 
+                   both Grand Orgue and Hauptwerk, added.  Support
+                   for the Hauptwerk free-demo organ,
+                   St. Anne&rsquo;s at Moseley, England, has been added.</li>
+   <li>(Grand Orgue only). The optional <b>PrologueExpectedName</b>
+   header statement has been added to verify correspondence of
+   an <b>orgdef</b> with its prologue
+   file. See <a href="orgdef.html#Initialization">this documentation.</a></li>
+   <li>The <b>orgdef</b> model has
+  been repaired so that parameterization of control classes works
+  properly.  Thus, either of <tt>StopModel:&nbsp;CommonSwitch1</tt> or
+  <tt>StopModel:&nbsp{Name:&nbsp;CommonSwitch, Channel:&nbsp;1}</tt>
+  is now usable in Hauptwerk <b>orgdef</b>s.</li></ul></dd>
+  <dd><ul><li>(Hauptwerk only) The Hauptwerk <b>orgdef</b> model has been enhanced to support a new <b>StopModel</b>, 
+  <b>CommonSwitch1</b>, signifying a <b>CommonSwitch</b> sent to 
+  <span class="smc">MIDI</span> Channel 1.  In fact, <p></p>
+  <ul class="uli">
+    <li>The <tt>Channel</tt> parameter of <b>CommonSwitch</b>
+    [didn&rsquo;t] work and [was] difficult to fix.
+    Piotr Grabowski&rsquo;s Giubiasco was accepting the 0 falsely 
+    sent instead of 1 (hence, the bug was masked), but
+  (Hauptwerk&rsquo;s free sample) St. Anne (and probably others) do not.</li>
+
+    <li>All three known instruments with <b>CommonSwitch</b> stop control (two from Grabowski and 
+    St. Anne) expect the commands on channel 1, not 0</li>
+  </ul>
+  <b>CommonSwitch1</b> should be used if <span class="smc">MIDI</span> inspection reveals use 
+  of channel 1 (which is expected) for stop control.</li></ul>
+  </dd>
+
+  <dt>1.0.10 (Frozen 7 Jan 2019)</dt>
+  <dd><ul>
+    <li><span class="smc">YAML</span> has been privately patched to diagnose
+  duplicate keys (e.g., <tt>m+b</tt> in schedules, division names in schedule
+  actions, stops in orgdefs) via the standard <span
+  class="smc">YAML</span> error mechanism (whose errors the tools “catch” and
+    present cleanly).  The otherwise lack of such diagnosis is a
+  <span class="smc">YAML</span> bug.  Tested with <span
+  class="smc">YAML</span> 3.11, but probably works with 3.12 (current).</li>
+    <li><tt>insreg</tt>’s handling of <span
+  class="smc">YAML</span> errors has been improved slightly (<tt>phraseit</tt>
+  was already good). <tt>insreg</tt> will also now diagnose a nonexistent input file “cleanly”
+  (i.e., no stack trace). This and other usage errors deemed to not be
+  “registration errors” <i>per se</i> will now be
+  reported as <tt>"Insreg usage error".</tt></li>
+    <li><tt>insreg</tt> “unison collision” handling has been enhanced to
+  discard redundant <tt>NoteOn</tt>s as well as premature
+  <tt>NoteOff</tt>s.  While the VPO apps ignore the former,
+  discarding them contributes to making the converted organ score
+  importable for inspection.  Console messages about unison handling
+  have been generalized to cover this.</li>
+  <li>(Hauptwerk only; Grand Orgue already “merges down” to one
+  track.) <tt>insreg</tt> will now output as many tracks as divisions
+  that are used (plus one for the “conductor” track, i.e., control/timing), all events in
+  each track bearing the corresponding division’s channel number. They will be
+  ordered by descending channel number, causing the track layout
+  (as it were!) to parallel the
+  vertical layout of manuals and pedals.  The previous policy of
+  selectively retained tracks corresponding to MuseScore staves has
+  been wholly discarded. (This affects only the track organization of
+  the output file, not the meaning of <tt>RouteStaves</tt> or similar.)</li>
+  <li>Some gratuitously prolix displays of per-track events have been
+  eliminated from <tt>insreg</tt>.  A final listing of the
+  “re-organized” tracks (tracks about to
+  be written to the file, whether or not suppressed by <tt>-c</tt>)
+  will still be produced at the end of its run.</li>
+  <li>Orgdef: Attempts to define multiple divisions with the
+  same channel (only possible in Version 3) will be
+  diagnosed. This and other organ definition errors will now show
+  prefixed <tt>"Organ definition error:"</tt>.</li>
+  <li><p style="padding-bottom: 0px">A new <tt>insreg</tt> option, <b>NoPrologue</b>, suppresses the
+  prologue in the output <span class="smc">MIDI</span> file for both Hauptwerk and Grand Orgue.  It
+  specifically allows a registration to be set
+  up by hand, perhaps through human performance, and subsequently tried with the
+  prepared <span class="smc">MIDI</span> file without “clearing” the
+  organ. This can be useful while experimenting with registrations for
+  a piece. You may need</p>
+  <pre style="padding-bottom: 0px; padding-top: 0px; margin-top:0 px;
+  margin-bottom: 0px;">
+  Registration: { }
+  </pre>
+  when, as a result, you have no registrations or schedule
+  (although you might reasonably still need the latter for manual changes).  It
+  works properly for Hauptwerk, but for
+  Grand Orgue, omission of the prologue, as far as is known, evokes
+  incorrect operation. The new option facilitates research into that problem.
+  <br>
+  <br>
+  The forcible opening of all swell-pedals of enclosed divisions is
+  in this regard part of the prologue; if you specify <b>NoPrologue</b>, it
+  <i>will not be done</i>.  As with a real console, check and open
+  all swell pedals before performing (no crescendo-pedal yet).  Forwarned is forearmed.
+  </li>
+  <li><tt>insreg -k (--kombination)</tt> was broken (crashed); fixed.</li>
+  <li><b>SourcePath</b> is no longer required in phrasing files when
+  only used with <tt>insreg</tt> (i.e., not <tt>phraseit</tt>
+  directly).  Also, if the <tt>MidiPath</tt> command line argument
+  to <tt>phraseit</tt> is used, <b>SourcePath</b> is not
+  required.</li>
+  <li><tt>dumpmidi</tt> no longer special-cases Time Signature events,
+  no longer displaying them in a format different from other Meta-Events,
+  nor in <tt>--brief (-b)</tt> mode.  You can always infer all Time
+  Signature events from the Time Model, which is always shown.</li>
+  <li>Orgdef: <b>Yes</b> is now acceptable as a division
+  <b>Expression</b> target, meaning that the division is enclosed,
+  and its swell pedal is on the division’s channel, which is the usual
+  case, avoiding the mysterious self-reference heretofore.</li>
+  <li>Orgdef: a new <b>DefaultP1</b> division attribute (in Version 3)
+  allows per-division override/default of per-instrument default for
+  stop address <tt>P1</tt>’s.  Some instruments are laid out this way.</li>
+  <li>Orgdef: support for Hauptwerk instruments that use
+  <tt>ControlChange</tt> <span class="smc">MIDI</span> commands and
+  not <tt>SysEx</tt>. See <a href="orgdef.html#hwaltcc">this section.</a></li>
+  
+
+</ul>
+</dl>
+
+<hr>
+
+
+</body> </html>

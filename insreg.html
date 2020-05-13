@@ -1,0 +1,384 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title>Insreg documentation</title>
+  <link rel="stylesheet" href="bsgmiditools.css">
+</head>
+<body>
+<div style="height: 10px"></div>
+<h1><tt style="font: 90% Courier;">insreg</tt> VPO preparation tool documentation</h1>
+<p class="pdft">by Bernard Greenberg, December 2017 (version of <b>1/7/2018 23:00</b> <tt>insreg</tt> distro <b>1.0.10</b>)</p>
+<p class="pdft" style="padding-bottom:30px"></p>
+
+<p><b>VPOMIDITools</b> Copyright © 2016-2020 by Bernard Greenberg. GNU General Public License Version 3 applies. Please see <a href="LICENSE">LICENSE</a> for details.</p>
+
+<h2>Introduction</h2>
+
+<p><tt>insreg</tt> (<i>ins</i>ert <i>reg</i>istrations) is a Python application that traduces <span class="smc">MIDI</span> files, usually produced by MuseScore, into new ones playable on the VPO (Virtual Pipe Organ) <i>organ systems</i>, i.e., Hauptwerk and Grand Orgue. It is controlled by a user-provided <i>registration file</i>, which identifies not only the <i>input file</i>, but a specific organ to be used, and a <i>schedule</i> of changes to be effected at specific times i n the piece.</p>
+
+<p>The following are <tt>insreg</tt>'s major functions:</p>
+
+<dl>
+  <dt>Track to channel routing</dt>
+  <dd><p>As directed by the registration file, notes from specific “tracks” of the input (for MuseScore representing staves one-to-one) are mapped into the channels representing the manual or pedal divisions as requested as appropriate for the selected instrument.  These routings may be changed by the schedule anywhere in the piece (the equivalent of moving hands between manuals). See <a href="#trackredist"><b>Track Redistribution</b>.</a></p></dd>
+  <dt>Registration</dt>
+  <dd><p>As directed by the registration file, registrations, naming stops of the instrument, can be selected at the beginning of the piece or any point in the schedule. “Pistons” may be defined, effectively assigning numbers to registration combinations for easy recall and single-point definition (they do not involve the virtual pistons of the VPO).</p></dd>
+  <dt>Expression control</dt>
+  <dd><p>Swell pedals for enclosed divisions may be manipulated during the piece by the schedule.  They are all opened full at the beginning of each piece.</p></dd>
+  <dt>Phrasing</dt>
+  <dd><p><tt>insreg</tt> invokes the <a href="phraseit.html"><tt>phraseit</tt> phrasing utility</a> internally, if asked, obviating the need to preprocess input with the latter.</p></dd>
+  <dt>Unison collision correction</dt>
+  <dd><p>The <span class="smc">MIDI</span> protocol evidences a subtle problem when notes in polyphonic music collide on the same channel, as they do on real-life pianos and organs.  This manifests as a seeming bug in MuseScore, “short notes clip long ones”, but is much more subtle. See <a href="https://musescore.com/groups/3642106/discuss/3663846">this discussion on MuseScore.</a>  <tt>insreg</tt> “repairs” these by removing premature ends of notes resulting from them.  As of 1.0.10, redundant <tt>NoteOn</tt> events are discarded, too, even though they do not damage performances.</p></dd>
+  <dt>Organ system initialization</dt>
+  <dd><p>Sets up the virtual organ to a known state before playing your file.  This is complex&mdash;<a href="#Initialization">see here</a>.</p></dd>
+  <a name="trackredist"></a>
+  <dt>Track Redistribution</dt>
+  <dd>For Grand Orgue, “smashes” all  <span class="smc">MIDI</span> events down to one track, for a “Format 0” <span class="smc">MIDI</span> file, as it seems that that app misbehaves when given multi-track (Format 1) files.  For Hauptwerk (as of 1.0.10), creates and appropriately populates tracks per manual (or pedals), as used.</tt>
+
+</dl>
+
+<p>To use <tt>insreg</tt>, you must have an operative python (Version 2 or 3) and the <span class="smc">YAML</span> parsing system (<tt>pyyaml</tt>) installed in it: see <a href="index.html#requisites">the “index” document</a> for instructions for obtaining and using them.</p>
+
+<h2>Table of Contents</h2>
+
+<p>Reading this document end-to-end, at least at first, is recommended, but once you have done so ...</p>
+
+<blockquote style="font-size: 120%;margin-top: 0px;">
+<a href="#basicusage">Basic usage</a><br/>
+<a href="#headerstatements">Header statements</a><br/>
+<a href="#modusoperandi">Modus operandi</a><br/>
+<a href="#headerstatements">Header statements</a><br/>
+<a href="#schedulelanguage">Schedule langauge</a><br/>
+<a href="#stopnamematching">Stop-name matching</a><br/>
+<a href="#Initialization">Organ initialization</a>
+</blockquote>
+<a name="basicusage"></a>
+<h2>Basic usage</h2>
+<pre class="pfm">
+    python insreg.py MySong.registration <i>-args</i>
+</pre>
+<p>There are many control arguments.  Right now, the most important one is <tt>-c</tt> (<tt>--check</tt>), which causes <tt>insreg</tt> to go through all the motions described above, including validating the registration file and input (<span class="smc">MIDI</span>) file, but to refrain from writing an output <span class="smc">MIDI</span> file.  &nbsp;<tt>-o</tt> specifies a non-default output <span class="smc">MIDI</span> file.</p>
+
+<p>All of the other control arguments ask for additional information to be printed during processing.  Say <tt>python insreg.py -h</tt> to learn about them.  Don’t worry about or use <tt>--oldcode (-O)</tt> or <tt>-A</tt>. Here’s what you'd get:</p>
+<pre style="padding-left: 40px;">
+usage: insreg.py [-h] [-o path] [-c] [-n] [-g] [-r] [-d] [-X] [-k] [-t] [-v]
+                 [-O] [-A]
+                 PieceDef [MidiPath]
+
+Convert MuseScore midi to Virtual Pipe Organ midi
+
+positional arguments:
+  PieceDef              Text (YAML) definition of piece
+  MidiPath              Optional midi path, when not in PieceDef
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -o path, --opath path
+                        output path; overrides OutputPath if present. Default
+                        inpath.&lt;vpoapp-name&gt;.mid
+  -c, --check           don't write, just check and process
+  -n, --notes           report 'Note On/Off' events
+  -g, --generated       report MIDI events generated
+  -r, --routings        report staff->division routing events generated
+  -d, --deletes         report deletions of non-note events
+  -X, --collisions      report unison collisions (will fix anyway)
+  -k, --kombination     report combination action
+  -t, --time_model      report time (signature) model
+  -v, --verbose         report all the above (except -n/notes)<span style="color: #AAA">
+  -O, --oldcode
+  -A, --Addresses       report generated midi events with file addresses</span>
+</pre>
+
+<a name="modusoperandi"></a>
+<h2>Modus operandi</h2>
+
+<p><tt>insreg</tt> takes immediate directions about the piece to be processed from the registration file, which is a <span class="smc">YAML</span> file.  Please see <a href="index.html#yaml">the “index” document</a> for a description and instructions for <span class="smc">YAML</span>.  It is an obvious text format based upon indentation and nested levels of lists and “mappings”, used in many modern software products.</p>
+
+<p><tt>insreg</tt> also needs special files defining the specifics of the organs you use, as well as files defining programming details for the VPO <i>organ systems</i>, Hauptwerk and Grand Orgue (as well as many internal pieces of code, including my private version of the “Vishnu Bob” Python <span class="smc">MIDI</span> system, which is included). Other than identifying the organ you want to use, you need not deal with or identify any of these files. There is no need for anyone but this author to develop organ-system definition files or code.  Developing <tt>.orgdef</tt> organ definition files (which are yet more <span class="smc">YAML</span> files) is necessary to use “new” organs, and is discussed in this <a href="orgdef.html">accompanying document</a>.  Note that none of these files (other than  <span class="smc">MIDI</span>) is the same format as similar files used by Hauptwerk and Grand Orgue.</p>
+
+<p><tt>insreg</tt> looks in the organ-system definition files for templates for the <span class="smc">MIDI</span> events expected by the organ-systems, and substitutes in them values identifying specific stops and other controls found in the organ definition files, where they are found by the names (rules for lookup will be given <a href="#matching">later</a>) specified in the registration schedule.</p>
+
+<p>The registration file directing <tt>insreg</tt> consists of two parts of <span class="smc">YAML</span> definitions, the <i>header</i> and the <i>schedule</i>, which define parameters of the entire process and changes to be effected at specific points, respectively.  The syntax of the schedule is complex, and will be detailed <a href="#schedule">later</a>.  Right now, the various header “statements”, many of which are optional, will be defined.  They are all of the form</p>
+<pre class="pfm">
+StuffName:  value-or-values-of-stuff
+</pre>
+<p>Note that <tt>insreg</tt> implements a small extension to  <span class="smc">YAML</span> called <i>commalist</i>.  Normally, <span class="smc">YAML</span> requires lists to be surrounded by brackets, e.g.,</p>
+<pre class="pfm">
+RouteStaves: [Oberwerk, Hauptwerk, Pedal]
+</pre>
+<p>In the places where <tt>insreg</tt> accepts commalists, you need only say:</p>
+<pre class="pfm">
+RouteStaves: Oberwerk, Hauptwerk, Pedal
+</pre>
+<p>Just as is the case for <tt>phraseit</tt>, <tt>insreg</tt> must know how you number your measures in your piece so that when you refer to them in the schedule, they can be found, and has no clues in the  <span class="smc">MIDI</span> file, and to this end, accepts <tt>Options: Upbeats</tt> and <tt>StartMeasure</tt> header statements to advise it when the first measure is not #1.  If this is not sufficiently clear, please read <a href="index.html#measurecounting">the discussion <b>Measure Counting</b></a> in <a href="index.html">the “index” document</a> for more detail.</p>
+
+<a name="headerstatements"></a>
+<h2>Header statements</h2>
+
+<p>Some are required, some are optional.  First we’ll describe the former, then the latter.  The statements can be in any order, although putting <tt>Name</tt>, <tt>Composer</tt>, and <tt>Organ</tt> first has obvious ease-of-bookkeeping advantages.</p>
+
+<h3>Required header statements</h3>
+
+<dl>
+  <dt>Name</dt>
+  <dd><p>The name of the composition. If it contains pound-sign(#), colons, it should be "in quotes". If it really must have embedded qu"otes, escape them with back\"slash. <tt>Name</tt> and <tt>Composer</tt> are necessary in order to cross-check with a possible phrasing file to make sure you don’t mis-connect them as I have, producing obscure errors.  Don’t abbreviate or use initialisms here; this is the place for the formal name of the composition.</p></dd>
+  <dt>Composer</dt>
+  <dd><p>See <tt>Name</tt>. The composer’s name shouldn’t really have embedded quotes or colons.</p></dd>
+  <dt>Organ</dt>
+  <dd><p>This must be the agreed-upon “name” of an organ supported by this program.  The <tt>.orgdef</tt> file of that name must be in the (obscurely-but-usefully-defined) <i>organ search path</i>.  Right now, the organ definition file specifies the organ-system to be used, so organ definition files for the same instrument for the two different organ systems must have different names.</p>
+    <p>The organ definition file contains named divisions and named stops on the divisions; there is an elaborate mechanism of synonyms and <a href="#matching">matching rules</a> that provides great flexibility in referring to them.  You will probably have to look at the organ definition file while writing registrations.  <tt>insreg</tt> tries, in its error messages, to be as helpful as possible when reporting failures to identify stops.</p></dd>
+    <dt>RouteStaves</dt>
+    <dd><p>This tells <tt>insreg</tt> how to map staves to organ divisions, at least at the beginning of the piece, and is necessary to declare what divisions will be used.  As with hands and feet, each staff (in MuseScore; <i>track</i> more generally) gets mapped to only one (or maybe not any) division (at a time; scheduled events can move them).  When an organ is used in a larger score, perhaps with chorus and instruments, the staves for the latter must be mapped to <tt>None</tt>. More than one staff can be mapped to the same division (as two (or more) hands can play on one manual).</p>
+    <p><tt>RouteStaves</tt> maybe given in one of two forms, a <span class="smc">YAML</span> “mapping” or an <tt>insreg</tt> “commalist”.  While the latter is almost always more convenient for organ music, when there are many staves that are not for the organ, the former is easier.  In the commalist form, the division (or lack there of) for each staff present, from the top down, #0, must be specified.  Staves beyond the last one actually mapped need not be mentioned.  For example, a <i>CF in soprano</i> chorale-prelude in the usual notation might show:</p>
+
+      <pre class="pfm">
+RouteStaves: Oberwerk, Rückpositiv, Pedal 
+      </pre>
+      <p>In the mapping form, the numbers (0 being top) must be used, and any staff not mentioned is ignored.  The order of the mapping elements does not matter. For instance, in a large score whose bottom two staves are a continuo organ:</p>
+            <pre class="pfm">
+RouteStaves: {18: Positiv, 19: Pedal}
+      </pre>
+      <p>In the commalist form, if a staff is not to be performed on the organ, any of
+      <tt>None</tt>, <tt>null</tt>, or an empty string must be used as its “routing”.</p>
+    </dd>
+  </dl>
+
+
+  <h3>Optional header statements</h3>
+  <dl>
+    <dt>SourcePath</dt>
+    <dd>This isn't <i>really</i> optional, but is listed as such because the source path can optionally be given to the command as a second positional argument (a development relic), and when it is, <tt>SourcePath</tt> isn't necessary. But one or the other is, and having it in the registration file is cleaner.  The <tt>SourcePath</tt> is the pathname (file name) of the input <span class=smc>MIDI</span> file to be processed.  It will always end in <tt>.mid</tt>.  If not an absolute pathname (e.g., a file name with no directory given) it is <i>relative to the directory containing the registration file in which it appears</i>, not the working directory when <tt>insreg</tt> is run, which may not always be the same.  This is generally more useful.</p>
+
+    <dt>OutputPath</dt>
+    <dd>The pathname of the <span class="smc">MIDI</span> to be written.  If you do not supply it, <tt>insreg</tt> will form a pathname by inserting the name of the organ system before <tt>.mid</tt> in the source pathname. For example, if the source pathname is <tt>Passacaglia.BuxWV161.mid</tt>, and organ involved is in Hauptwerk, the output path will be <tt>Passacaglia.BuxWV161.Hauptwerk.mid</tt>, in the same directory as the input file.  If that pathname exists it will be overwritten.  Do not attempt to try to force it to overwrite its input file; it will refuse.  <tt>OutputPath</tt> may also be specified with the <tt>-o</tt> control argument, which overrides <tt>OutputPath</tt>, if present.</p>
+
+    <dt>PhrasingPath</dt>
+    <dd><p>The pathname of the phrasing file (for <a href="phraseit.html"><tt>phraseit</tt></a>), if one is supplied, again, relative to the registration file itself.  If you supply this, <tt>insreg</tt> will use <tt>phraseit</tt> to impart your phrasings to the piece before doing other processing.  No intermediate file will be produced or saved; the work is all internal.  <tt>phraseit</tt> will do the same work and issue the same error messages as when invoked on its own (but not produce an output file).  It is not required to have a phrasing file or do phrasing at all. See the <a href="phraseit.html"><tt>phraseit</tt> documentation</a>.</p></dd>
+    <dt>NoOrganOutputPath</dt>
+    <dd><p>The pathname, if one is wanted, of a <span class="smc">MIDI</span> file to create containing all the tracks in the input file <i>not</i> designated for the organ by <tt>RouteStaves</tt>, conceivably choral and/or instrumental staves. Timing information from track 0 of the input file will be copied to a new timing track if Staff 0 is an organ staff (this is tricky to think about).  This is useful because the non-organ tracks will be phrased (if phrasing was used), and the organ tracks will be removed, so the file can be recorded into a <tt>.wav</tt> file for mixing with the VPO <tt>.wav</tt> output without any further adjustment.</p>
+
+<p>You can “perform” the “non-organ <span class="smc">MIDI</span>” with MuseScore in two ways, interactively or “headless” via command-line.  Interactively, open MuseScore, and open the <span class="smc">MIDI</span> file via <b>File | Open</b>.  It will open with phrasings “repaired” by MuseScore, which mistakes them for inaccuracies. To counteract this behavior, you must change these settings on the <span class="smc">MIDI</span> Import panel at the bottom of the score window:
+
+      <ul class="lid">
+	<li><tt>Max. quantization</tt> to 1/32, or even 1/64</li>
+	<li><tt>Simplify durations</tt> to <tt>Off</tt></li>
+	<li><tt>Show staccato</tt> to <tt>Off</tt></li>
+	<li><tt>Dotted notes</tt> to <tt>Off</tt></li>
+     </ul>
+     <p></p>
+     <p>then click <b>Apply</b> to re-import with the new settings; phrasings should then be clearly visible as small rests on all staves. Then <b>Export</b> to a sound file of your choice.</p>
+     <p> To perform to recorded sound without interaction from the command line, you should issue a command line similar to this:</p>
+      <pre class="pfm" style="padding-left: 20px">
+mscore MyChorale.mid -o MCCNoO.wav -M MS_ImportOptions.xml
+      </pre>
+      <p>The file <tt>MS_ImportOptions.xml</tt>, provided with this software, puts the above options into effect for the <span class="smc">MIDI</span> importation; without it, phrasings will be erased.  Finding and naming <tt>mscore</tt> usably (in the above) will differ between Windows, Mac OS/OS X, and Linux; I leave that as an exercise for the reader.</p>
+      <p>Also, please read about <b>NoOrganForceStaves</b> below!</p>
+    </dd>
+
+    <dt>NoOrganForceStaves</dt>
+    <dd><p>This optional header field is only necessary when, in the case that <b>NoOrganOutputPath</b> is used to write a “no organ” <span class="smc">MIDI</span> file, there are one or more staves directed to the organ by <tt>RouteStaves</tt> that you <b>do not</b> want to be removed from the “no organ” output.  If you set aside staves for “Organ” in your score, you don’t need this.  But in many Baroque scores, there is a staff for all <i>continuo</i> instruments (in spite of MuseScore lacking a <i>colla parte</i> feature to facilitate doing such), and organ pedal might be one of them; you might route the cello or contrabass staff to the organ pedal. In those cases, you must use <tt>NoOrganForceStaves</tt> to force the pedal/<i>continuo</i> staff to persist in the “no organ” output for the other instrument (which, of course, must be that assigned to it in MuseScore).  The operand of <tt>NoOrganForceStaves</tt> is a “commalist” of such staff numbers (which, of course, can, and usually will, be one staff number).</p></dd>
+
+      </dd>
+
+    <dt>StartMeasure</dt>
+    <dd><p>This (identical to the same in <a href="phraseit.html"><tt>phraseit</tt></a>) is needed to inform <tt>insreg</tt> when the first measure number is not 1, such as in an excerpt from the middle of a piece. If the first measure is number 0 because an upbeat exists before measure 1, <tt>Options: Upbeats</tt> may be used, which is fully equivalent to <tt>StartMeasure: 0</tt>.    If this is not sufficiently clear, please read <a href="index.html#measurecounting">the discussion <b>Measure Counting</b> of <a href="index.html">the “index” document</a>.</p></dd>
+
+    <dt>Options</dt>
+    <dd><p>There are only two documented and supported right now.</p>
+      <dl style="padding-left: 0px">
+	<dt>Upbeats</dt>
+	<dd><p>Identical to the identically-named option in <tt>insreg</tt>, stating that
+	  the first measure appearing in the input <span class="smc">MIDI</span> is not measure 1,
+	  but measure 0.  This is about measure-numbering in the schedule, if one is supplied, not about any musical issue. See <a href="index.html#measurecounting">this discusssion</a> for further detail.</p></dd>
+	  <dt>NoPrologue</dt>
+	  <dd><p>Suppresses generation of the “prologue”, which resets the organ at the beginning
+	    of playback, causing playback to use whatever registrations you had set.  While this has
+	    its place, routine use is discouraged. In particular, in Grand Orgue, omission of
+	    the prologue causes non-understood malfunction (this can help research in that area). In Hauptwerk, it works properly.</p></dd>
+	</dl>
+    <dt>Octstaves</dt>
+    <dd><p>This is <b>very important</b> and will beget audible musical confusion if omitted when needed. This, with your help, reconciles three unhappily connected octave transposition facts:</p>
+      <ul>
+	<li>Music for organ pedals, generally written in the bass clef, like a contrabass, generally, but not always, sounds an octave below the note which is written. This is true when 16' stops are used, which is the default in organ composing and playing, even when playing music for piano or chorus or other forces.  At other times, e.g., when the composer says <i>canto fermo in pedale 4'</i>, the pedal sounds an octave <i>above</i> what is written.</li>
+	<li>MuseScore instruments work the other way; the MuseScore contrabass, when told to play F2 (the F below the bass clef) actually plays F2, not F1 as would a human bassist.  For ths reason, MuseScore contrabass music must either use the <i>ottava bassa</i> clef (with a little 8 under it), or (in newer scores) specify octave transpose 1 down in “staff properties”.</li>
+	<li>In order to simulate the first item, the implicit octave-transposition down of organ pedals, MuseScore scorers presenting organ music have often used, and still often use, the <i>ottava bassa</i> clef or “staff properties” to transpose the pedal part an octave down from its visual tessitura.  This gets even more confusing when the “old MuseScore ‘pipe organ’”, a plenum sound including 16' stops, is used.</li>
+      </ul>
+      <p></p>
+	<p>The VPO organ-systems expect the pedal part at written pitch, i.e., as though an 8' stop were being used in every case.  The use of the <i>ottava bassa</i> clef or “staff properties” transposition would thus cause them to sound the pedal an octave lower than the correct pitch, and that’s exactly what you will hear (with lowest notes just dropped) if you fail to use <tt>Octstaves</tt> to correct for it. <i>Mutatis mutandi</i> for 4' pedal.  If the pedal part is being appropriated from a cello part, you do not need <tt>Octstaves</tt>, but for a contrabass part, you do.  The format of the value is a “mapping” from staff numbers (downward from the top, which is 0) to <tt>Up</tt> or <tt>Down</tt>, <tt>Up</tt> being typical for a pedal part writting with <i>ottava bassa</i>, including contrabass, most typically (for typically-notated organ music):</p>
+	<pre class="pfm">
+Octstaves: {2 : Up}
+      </pre>
+      <p>Remember, colon must be followed by space!</p>
+      </dd>
+    <dt>Schedule</dt>
+    <dt>Registration</dt>
+    <dd>One or the other of these <b>must be supplied; not optional</b>. <tt>Registration</tt> allows registrations to be set for the beginning of the piece, on the assumption that they will not be changed during the course of the piece.  For countless pieces, including almost all chorale preludes, this is all you need. <tt>Schedule</tt> provides a schedule of registrations (and expression changes) for different points in the piece.  When <tt>Schedule</tt> is used, initial registrations must be scheduled for the first beat of the first measure of the piece.  The <tt>Schedule</tt> language is complex, and will be detailed <a href="#schedule">later</a>.  The <tt>Registration</tt> language is simpler, and is as follows:</p>
+
+      <p>(Initial) registrations are specified via a multi-line <span class="smc">YAML</span> “mapping”, from division name to “commalist”s of stop-names (which may be multi-line), division and stop names as understood by the organ in use.  The stop-name matching language will be described <a href="#matching">later</a>.  Here is a valid <tt>Registration</tt> for the organ at Giubiasco:</p>
+      <pre class="pfm">
+Registration:
+   Positivo: Bordone 8, Flauto
+   Grande Organo: Principale 8, Ottava 4
+   Pedale: Subbasso 16
+      </pre>
+      <p>As with all <span class="smc">YAML</span>, be careful not to use “tab” characters! Spaces alone must be used to indent, and sibling elements on different lines must line up vertically, and colon must be followed by space.</p>
+      <p>It is possible to have an empty registration specification (perhaps for use with the option <b>NoPrologue</b>).  It looks like this:</p>
+      <pre class="pfm">
+Registration: { }
+      </pre>
+      </dd>
+
+      <dt>Combinations</dt>
+      <dd>This statement allows the definition and “setting” of “combination pistons” as found on real organs, both per-division (divisional) and general.  These are “macros” that allow you to “call” them by number repeatedly in the schedule of a long movement. As expected, the syntax for divisional and general pistons is slightly different.  The “name” of a piston is always a number in the context of a division or “general”.  Use of this facility is highly optional, but useful in long pieces.  Two important disclaimers:</p>
+	<ul>
+	  <li>Pistons defined by this mechanism <i>do not correspond at all</i> to pistons of any kind defined by the VPO system and its organist.  There is no way in <tt>insreg</tt> to manipulate the latter.  This is actually a feature, not a deficiency, because pistons regularly get “changed” by human organists, whereas the meaning of an <tt>insreg</tt> piston is happily saved forever here in the registration file.</li>
+	  <li>Hauptwerk has ingenious types of pistons whose “scope”, i.e., which stops it sets or resets, is specifiable as some other set of stops than a whole division or the whole organ, and “reversible pistons” which allow a set of stops to be drawn or retired as a unit, as well as “stepper” pistons as on modern pipe organs.  <tt>insreg</tt> currently has nothing like any of them (nor is rapid operation an issue in scripting software).</tt>
+	</ul>
+	<p></p>
+	<p>The format of this header statement is a multiline mapping from division names (including <tt>General</tt>) to further multiline mappings from piston numbers to piston meanings.  For divisional pistons, the “meanings” are commalists of stops on that division.  For <tt>General</tt>, the “meanings” are yet further mappings from division names to commalists of stops for that division.  One example should suffice. Again, be <b>very</b> careful not to use tab characters and to ensure correspondence of vertical column position, and colon must be followed by space:</p>
+	<pre style="padding-left: 40px">
+Combinations:
+   Rugwerk:
+     1:  Holpyp 8, Fluit 4, Nasard
+     2:  Viola da Gamba 8, Octaav, Cymbel
+   Hoofdwerk:
+     1:  Praestant 8, Octaav 4, Mixtur
+   General:
+     1:
+       Hoofdwerk: Praestant 8, Octaav 4, Mixtur, Trompet
+       Pedaal: Praestant 16, Octaav, Basuin,
+	       Coppel Hoofdwerk
+</pre>
+
+    <dt>ScoreUrl</dt>
+    <dd>The online URL in MuseScore where this output is posted.  This currently not used at all, and serves only a documentation function. I've actually never used it, and you can ignore it.</dd>
+</dl>
+<a name="schedule"></a>
+<a name="schedulelanguage"></a>
+<h2>Schedule language</h2>
+
+<p>The <tt>insreg</tt> schedule is actually a multiline mapping from time-locations in the piece (specified by measure and perhaps beat) to <i>action-sets</i> of <i>actions</i>, such as drawing or retiring stops or changing expression pedals, grouped by division.  Because it is a mapping, the order of elements (what happens at each time) is arbitrary, although it is highly recommended to enter the elements in time-order, as in all other things on earth called “schedule”.  Here is a typical small schedule (<i>Lauda Anima</i> with mid-measure changes added for illustration); the details will be defined after it.</p>
+<pre style="margin-left: 100px;">
+Schedule:
+  1:   {General: 1, II: {Expression: 80%}}
+  10:  {Pedal: {Remove: [Gr.-Bourdon, Posaune]}}
+  35:  {I: {Remove: [Mixtur, Kornett]}}
+  60+1.5:  {I: {Remove: Oktave}}
+  85:  {General: 2}
+  108+2: {Pedal: {Add: Gr-Bourdon}}
+  125: {Pedal: {Add: Bombardon 32}}
+</pre>
+<p>The “left-hand side” of each <i>action-set</i> mapping (the item before the colon) is what we call an <tt>m+b</tt>, which means, “measure number + beat number”.  The beat number is optional, and if it, and the <tt>+</tt>, are omitted, the beginning of the measure (beat 0) is assumed.  As in <tt>phraseit</tt>, beats are zero-originned in each measure, with fractional beats being expressed as decimal fractions (e.g., 1.6666), and are counted in reference to the time-signature, which has certain exceptions for compound times. Please see <a href="index.html#beats">this discussion</a> in the <a href="index.html">“index” document</a> for further detail on beat measurement and counting and <tt>m+b</tt> notation. Note, too, that the left-hand edges of these numbers or <tt>m+b</tt>s must line up &mdash; forgetting this, or lining them up right-aligned as is common for numerical fields, are common errors.</p>
+
+<p>The “right-hand side” of each action-set is another mapping, which can either be expressed as a multiline mapping, or the more compact way with curly braces.  Each element of the action set is a mapping from a division name (or <tt>General</tt>) to a set (not an <tt>insreg</tt> commalist) of <i>division actions</i>, to be described shortly.  If the division name is “<tt>General</tt>”, the only possible division action is a general piston number (not a set) of a defined (<tt>insreg</tt>) general piston to be called at that time; other registration changes at the same time are made after it is called.  If the name is not <tt>General</tt>, it must be the name or synonym for a division as understood by the organ in use.</p>
+
+<p>There are four types of division actions.  Each has a name, which is used as a key a the mapping which itself is the target of the mapping from division name in the <i>action set</i>; don’t try to parse that; just look at the example.  The mapping maps the action name to a list (not a commalist) of affected stops (although if only one stop is involved, it need not be put in a list &mdash; see the above example (i.e., the <tt>Oktave</tt>).</p>
+<dl>
+  <dt>Add</dt>
+  <dt>Remove</dt>
+  <dd>specify (as right-hand mapping side) lists of stops (or one stop) on the division involved, to be added or removed.  Having multiple <tt>Add</tt>s or <tt>Remove</tt>s for the same division at one time is not meaningful or possible &mdash; simply provide a list of stops.</p>
+  <dt>Expression</dt>
+  <dd>This controls the expression-pedal/swell shutters of enclosed divisions in 19<sup>th</sup>-century and later organs.  <tt>insreg</tt> inserts commands to fully open all swell shutters at the start of every piece for all organs having them.  If you want to specify some other setting as a division action, you can say</p>
+    <pre class="pfm">
+Expression: 42%
+    </pre>
+    <p>as you like.  There are more complex ways of specifying gradual opening or closing of swell shutters, but their design is not stable, so I don’t want to document them now.</p></dd>
+    <dt>RouteStaves</dt>
+    <dd><p>(Not to be confused with the same-named header statement). This is the (slightly obscure) way by which “hands” move from one manual (division) to another, that is, staves are rerouted in the course of a piece.  It is obscure because the schedule details events for divisions, not for staves.  The operand (right-hand mapping side) for <tt>RouteStaves</tt> is either a single staff number (from the top from 0, as usual), or a bracket-enclosed list of more than one.  The semantics are that at that point, the identified staff or staves are routed to the division in whose division action list this appears.  For example:</p>
+      <pre class="pfm">
+15+2: {Schwellewerk: {RouteStaves: [0, 1]}}
+</pre>
+      <p>This says that at measure 15, beat 2 (the third beat), both staves 0 and 1 move to the Schwellewerk.  You can think of it as “The Schwellewerk picks up staves 0 and 1”.</p>
+      <p><tt>insreg</tt> will diagnose attempts to reroute staves in the middle of notes actually sounding on them.</p></dd>
+</dl>
+<h3>Old schedule format</h3>
+<p>This section is presented because some error messages may refer to it (format errors in the schedule are easy to make and hard to debug), and because my older registration files (which can still serve as examples) employ it, and are messy to upgrade.</p>
+<p>The single difference of the old format is that the “keys” (left-hand sides) of each entry, which currently are measure numbers or <tt>m+b</tt> measure/beat designations, are, in the old format, always measure numbers, and the right-hand sides, rather than being action sets, are <i>mappings of beat numbers (in that measure) to action sets</i>.  Thus, the old format always has one more level of curly braces than the new format (which was the reason for innovating the latter).  Here is the beginning of a registration file using the old schedule format (<tt>Measures</tt> is an antique synonym for <tt>Schedule</tt>; don’t use it):</p>
+
+<pre class="pfm" style="font-size: 95%;text-decoration: line-through;color: grey">
+Name: "Chorale #1 in E Major" <span style="font-size: 150%;font-family:roman;text-decoration: initial">  Do not copy/reuse! Obsolete!</span>
+Composer: César Franck
+Organ: Caen
+SourcePath: "~/Documents/MuseScore2/OutMidi/Franck Chorale No1.phrased.mid"
+RouteStaves: Grand Orgue, Grand Orgue, Pedale, None
+Measures:
+   0 : {0 : {
+          Grand Orgue: {Add: [Montre 8, Bourdon 8, Gambe 8, Prestant 4], RouteStaves: [0, 1]},
+          Recit: {Add: [Viole de Gambe 8, Voix Humaine], Expression: 127},
+          Positif: {Add: [Principal, Salicional, Cor de Nuit]},
+          Pedale: {Add: [Soubasse 16, Contrebasse 16]}}}
+   8 : {2 : {
+          Recit: {RouteStaves: [0, 1]}}}
+   16 : {0: {
+          Grand Orgue: {RouteStaves: [0, 1]}}}  
+   23 : {2 : {
+          Recit: {RouteStaves: [0, 1]}}}
+...    ...   ...
+</pre>
+
+
+<a name="stopnamematching"></a>
+<a name="matching"></a>
+<h2>Stop-name matching</h2>
+
+<p><tt>insreg</tt> contains a moderately sophisticated user interface feature to facilitate “sloppy” specification of stop names in registration files, allowing them as organists would think of them or say them and rendering unimportant minor orthographic details. These are the rules, which are to be taken <i>in priority order</i>:</p>
+<ul>
+  <li>Foreign characters with diacriticals are required to be entered accurately in Unicode, e.g., <tt>Flöte, Flûte, Tr&eacute;molo</tt>. Registration files are <span class="smc">UTF-8</span>.  This requirement may be removed some day.</li>
+  <li>Multiple spaces are the same as one space; <tt>Lieblich&nbsp;&nbsp;&nbsp;Gedackt</tt> is the same as <tt>Lieblich&nbsp;Gedackt</tt>; either will do for either.</li>
+  <li><b>Specifying a stop-name </b> (and pitch (“feet”)) <b> <i>exactly</i> as it appears in the <tt>insreg</tt> organ definition file ALWAYS WORKS</b>, but that is the last resort.</li>
+  <li>In every case, I have striven to reproduce the name on the Hauptwerk stop control exactly in the organ definition file, even when it reveals an error (e.g., <i>viola di gamba</i> for <i>viola da gamba</i>). Often I have added “synonyms” in the organ definition file to assist in matching; matching any of the names will do to find the stop or control.</li>
+  <li>Alphabetic case is ignored, but registration files look better with proper case.</li>
+  <li>Apostrophe characters meaning “feet”, as well as any of the words <tt>fach, voet, sterk, ranks, rk, rangs, file</tt> (Italian) are discarded/unnecessary and ignored. <b>When writing “feet”, if so you choose, use the real ASCII single-quote mark &mdash; these: '&nbsp;'&nbsp;' </b> (hex 27, octal 47), not balanced Unicode typographical quotes (these: ’&nbsp;’&nbsp;’, hex 2019, octal 20031).</li>
+  <li>If a stop name occurs more than once on a division, the pitch (feet), or number of ranks of a mixture, must be supplied.  Otherwise, if a stop name without a pitch is unambigous, it may be used as such.  Thus, if there is only one <tt>Bourdon</tt> on a division, <tt>Bourdon</tt> may be used for <tt>Bourdon 8'</tt>.  But if there is also a <tt>Bourdon 4'</tt> on the same division, you must say <tt>Bourdon 8</tt> to get the lower-pitched stop. <tt>insreg</tt> will diagnose ambiguity explicitly.</li>
+  <li>Dots are ignored, and spaces and dashes are considered equivalent, e.g., <tt>Gr.-Bourdon</tt> can be found as <tt>Gr&nbsp;Bourdon</tt>. Note that in such cases I have added my best attempt at the unabbreviated word, e.g., <tt>Gross&nbsp;Bourdon</tt> (inconsistent about esszet because it doesn't appear on Hauptwerk stop controls) as a synonym.  <tt>Tirasse&nbsp;GO</tt> will find <tt>Tirasse&nbsp;G.O.</tt></li>
+  <li>The French controls <tt>Anches</tt> et <tt>Octaves</tt> appearing on a division may be specified by that one word, even if the stop-knob says <tt>Anches Positif</tt> on that division. Ditto <i>Afsluiter</i> (divisional ventil).</li>
+  <li>Mixture rank counts are always given in Roman numerals (e.g., <tt>ii, vi, ii-iv</tt>), case ignored, even if the organ builder used Arabic numerals (e.g., <i>Cimbalo 2 file</i>). Additional pitch designations on mixtures, found in some instruments, are not used or recorded right now.</li>
+</ul>  
+
+<p>Some organs have <tt>Control</tt> as a “division” for organ controls not associated with any particular division. You must visit the organ definition file to deal with this case.</p>
+
+<a name="Initialization">
+<h2>Organ state initialization</h2>
+
+<p>Ideally, the playback of a given <span class="smc">MIDI</span> file on a VPO system should produce the same performance every time. (While it is conceivable that one might create “test tool” <span class="smc">MIDI</span> files that explore carefully set up “states” of the virtual instrument, we ignore that arcane possibility here.)</p>
+
+<p>Immediately prior to the performance of a work, organists usually press a button marked “General Cancel” to reset all stops and couplers left over from the previous composition, or previous organist, before setting up the registrations they have chosen.  Both Hauptwerk and Grand Orgue offer such a control on their consoles. (On historical instruments with mechanical stop action, registers must be manually retired.) When playing <span class="smc">MIDI</span> files, however, it is all too easy to forget to reset all drawn stops and couplers (as well as opening all expression pedals)!  One might argue that the  <span class="smc">MIDI</span> files themselves should call for such an action before they begin playing.</p>
+
+<p>Hauptwerk and Grand Orgue have two different approaches to managing this issue.  They can be observed by asking each VPO application to record a  <span class="smc">MIDI</span> file of your playing, and examining it with <a href="dumpmidi.html"><tt>dumpmidi</tt></a> or some other tool.  Both applications “emit events” to bring their virtual organs to a known state before reproducing the notes and control manipulations recorded during the sessions.</p>
+
+<p>In the case of Hauptwerk, as soon as you start recording to <span class="smc">MIDI</span> the application executes and emits a “general reset” “SysEx” event, which is the equivalent of the <b>Reset Organ/MIDI</b> item on its <b>View</b> menu.  While this succeeds at resetting all registrations, both in the loaded organ and native to Hauptwerk, it also power cycles the simulated blower, which introduces a six-second interval after starting recording during which air pressure is unstable and pipes will not speak properly!  Try it! (We call this a <i>hard reset</i>).</p>
+
+<p>Grand Orgue is more devious.  When <span class="smc">MIDI</span>-recording a performance, the shareware application <i>does not</i> reset all registrations and controls, but emits events to “capture”, to “snapshot” whatever controls you have set!  Therefore, when making such a recording, it does not matter if you reset registrations before starting the recording, after starting it, or not at all.  Replaying the recorded <span class="smc">MIDI</span> file will reproduce the settings at and during the time it was recorded.</p>
+
+<p><tt>insreg</tt>, therefore, pursues two different policies intended to set up the registrations you call for at the beginning of the piece, and no others, cancelling all registrations and other controls that might be “left over”. Some further discussion of these policies is in order.</p>
+
+<h3>Hauptwerk initialization</h3>
+
+<p>Research has revealed that Hauptwerk's “General Cancel” “piston” (sadly) <i>does not</i> emit an exploitable <span class="smc">MIDI</span> event, but the particular, drawn at that time, stops it retires do, which is useless for  <span class="smc">MIDI</span>-generating tools such as <tt>insreg</tt>. Thus, the latter cannot duplicate this action.</p>
+
+<p><tt>insreg</tt> <i>does not</i> emit the “general reset” (not <i>cancel</i>) event, because the long blower-related delay necessary following it is (I apologize for preëmpting this assessment from you) intolerable.  So the latest (distribution 1.0.8) <tt>insreg</tt> makes a compromise:  It resets all stops and controls known to the <tt>.orgdef</tt> file for the organ, <i>except those you call for at the beginning of the piece</i>, which it <i>engages</i>, not <i>resets</i>, whether they had previously been drawn or not.  The latter are mentioned because, on some Hauptwerk organs, stop manipulation actually provokes audible “realistic” noise that goes into the recording.  (We call this a <i>soft general cancel</i>).</p>
+
+<p>For the latter reason, and the fact that Hauptwerk seems to require a delay between cancelling a stop and drawing it again (for want of which the latter fails), <tt>insreg</tt> “hoists” these manipulations out of the performance, to a “prologue” one second before the performance, like a real organist.  When playing back an <tt>insreg</tt>-generated (latest distributions) <span class="smc">MIDI</span> file, you will see the registrations set up, and hear this action, a second before actual music starts. (Since audio recordings made of these performances must begin even before <span class="smc">MIDI</span> playback begins, and thus audio editing is always necessary, this delay has no effect on synchronization with other parts&mdash;it was difficult before, and is no more or less difficult now.)</p>
+
+<p>The following advisements must be heeded:</p>
+<ul>
+  <li>There are many Hauptwerk controls that are defined by Hauptwerk and not logically part of specific organs; they do not appear in the standard visible control panel of the instrument. Typical of such are Hauptwerk’s dozens of “Master Couplers”. Unless specific such controls are “imported” into the <tt>.orgdef</tt>, they will not be reset by this soft general cancel. It will only reset controls that <tt>insreg</tt> knows how to use.</li>
+  <li>Controls that should be “left on” when registrations are cleared, such as <i>Calcant</i> (wind supply) or the <i>Copule Grand Orgue</i> (French manual division, not VPO product) “coupler” on French instruments that allows its stops to play at all or divisional ventils (<i>Afsluiter</i>) are ensured <i>on</i>, not <i>off</i>, by soft general cancel (similar to its treatment of stops called for at the beginning of the piece).</li>
+</ul>
+
+<p>There is an option to emit a “hard reset”, but I don’t want to document it at this time, and advise against its use.</p>
+
+<h3>Grand Orgue initialization</h3>
+
+<p>Grand Orgue, as described, when recording, emits several hundred <span class="smc">MIDI</span> events that recreate organ state as it was at the time the recording commenced. Unlike the <tt>insreg</tt>-generated soft general cancel, it apparently includes non-understood events which are not optional&mdash; <span class="smc">MIDI</span> files made without them are not usable at all; they fail in an obscure fashion.</p>
+
+<p>For these reasons, <tt>insreg</tt> scripts Grand Orgue initialization by injection (from a file) of the previously-recorded events emitted by Grand Orgue to a <span class="smc">MIDI</span> recording of the organ in use made with all stops and controls reset, which we call the “Grand Orgue prologue”. Since the latter operates all the controls (not just the ones you know or care about) of a given organ, it differs from one instrument to the next, and the person who prepares <tt>.orgdef</tt> files must prepare such a Grand Orgue Prologue for each organ.</p>
+
+<p>Happily, the Grand Orgue prologue manipulations neither make recordable noise nor adversely impact registrations called for immediately thereafter (both are problems in Hauptwerk), so no delay need follow them.</p>
+
+<p>When using <tt>insreg</tt> with Grand Orgue, you do not have to worry about this or opt for it in any way; if the <tt>.orgdef</tt> was properly prepared, it will be managed this way unconditionally.  Soft general cancel is neither required nor available.</p>
+<p>END</p>
+</body>
+</html>
