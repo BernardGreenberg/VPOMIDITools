@@ -16,7 +16,7 @@ import time
 from fractions import Fraction
 from collections import defaultdict, namedtuple
 
-from six.moves import xrange
+#from six.moves import xrange
 from six import print_
 
 import ConfigMan
@@ -31,6 +31,7 @@ if six.PY2:
     #from bsgpmfio import write_midifile, ADDRESS_TRACE
 else:
     from midi import write_midifile
+    xrange = range
 
 def set_fio_address_trace(b):
     midi.ADDRESS_TRACE = b #won't do much unless using patch package

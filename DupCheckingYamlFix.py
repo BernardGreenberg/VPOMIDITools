@@ -14,6 +14,7 @@ from yaml.resolver import Resolver
 from yaml.nodes import MappingNode
 from six import PY2, PY3
 import collections
+import typing      #py 3.10, works in 3.9, too
 
 #BSG 4 January 2018, for insreg distro 1.0.10
 
@@ -41,7 +42,8 @@ class DupCheckingSafeConstructor(SafeConstructor):
             # keys can be list -> deep
             key = self.construct_object(key_node, deep=True)
             # lists are not hashable, but tuples are
-            if not isinstance(key, collections.Hashable):
+#            if not isinstance(key, collections.Hashable):
+            if not isinstance(key, typing.Hashable):
                 if isinstance(key, list):
                     key = tuple(key)
             if PY2:
@@ -53,7 +55,8 @@ class DupCheckingSafeConstructor(SafeConstructor):
                         "found unacceptable key (%s)" %
                         exc, key_node.start_mark)
             else:
-                if not isinstance(key, collections.Hashable):
+#                if not isinstance(key, collections.Hashable):
+                 if not isinstance(key, typing.Hashable):
                     raise ConstructorError(
                         "while constructing a mapping", node.start_mark,
                         "found unhashable key", key_node.start_mark)
