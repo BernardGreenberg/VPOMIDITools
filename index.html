@@ -11,8 +11,8 @@
 </head>
 <body>
 <h1>BSG tools for MIDI/VPOs &mdash; requirements, overview, common notions</tt></h1>
-<p>Copyright © 2016-2020 by Bernard Greenberg<br>
-   Version May 2020 </p>
+<p>Copyright © 2016-2024 by Bernard Greenberg<br>
+   Version February 2024 </p>
 <!-- hhmts start --> <!-- --><!--hhmts end -->
 
 <p>These tools are offered under the GNU General Public License Version 3.
@@ -30,7 +30,7 @@ Please see the file <b>LICENSE</b> for details.</p>
 
 <p>Starting with <tt>insreg</tt> distribution <b>1.0.10</b>, a <a href="changes.html">changes document</a> is available.</p>
 
-<p>Starting with <tt>insreg</tt> distribution <b>1.0.11</b>, Python version 2 (no longer supported by python.org) is deprecated; Python version 3 (last tested with 3.8) is recommended for all parts of the suite.</p>
+<p>Starting with <tt>insreg</tt> distribution <b>1.0.13</b>, Python version 3 is required for all parts of the suite. Python version 2 is no longer supported.</p>
 
 <h3>Contents</h3>
 
@@ -66,6 +66,8 @@ Please see the file <b>LICENSE</b> for details.</p>
 
     <p>While <tt>phraseit</tt> can be used by itself, it can also be invoked internally by <tt>insreg</tt>, as part of the latter’s conversion of a file, without requiring or producing an intermediate file.</p>
 
+    <p><b>Note that MuseScore Version 4 does not support the articulation (phrasing) plugin.  The suite has not been tested with MuseScore 4 output (I still use Version 3), so there may still be a need for phraseit.</p>
+
     <p><a href="phraseit.html">Documentation for <tt>phraseit</tt> here.</a></p>
     </dd>
 
@@ -100,10 +102,8 @@ Please see the file <b>LICENSE</b> for details.</p>
   <del style="color: grey">python -i dumpmidi.py MoonlightSonata.mid</del>
   </pre>
   
-  <p>Python exists in two major versions, 2 and 3. As of this writing (April 2020), Version 2 is obsolete.  This suite functions correctly 
-    in Python version 3.  Python 3.6 is the minimum version required.   Installation packages for all current python versions are located <a href="https://www.python.org/downloads/">here on python.org</a>. You can download and install the appropriate one of these according to the hardware and conventions of your system (<tt>sudo</tt> or adminstrative access may or may not be necessary) if you do not already have a suitable python installed.</p>
-
- <p>In Version 1.0.11 of this suite and earlier, either Python is supported, but support for Python version 2 will be dropped.</p>
+  <p>Python exists in two major versions, 2 and 3. As of this writing (February 2024), Version 2 has been obsolete for several years.  This suite (Version 1.0.13 and up) requires 
+    Python version 3.  Python 3.6 is the minimum version required. It has been tested in 3.9 and 3.12.  Installation packages for all current python versions are located <a href="https://www.python.org/downloads/">here on python.org</a>. You can download and install the appropriate one of these according to the hardware and conventions of your system (<tt>sudo</tt> or adminstrative access may or may not be necessary) if you do not already have a suitable python installed.</p>
 
 
 <h3 id="yaml">YAML</h3>
