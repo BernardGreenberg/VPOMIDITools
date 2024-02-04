@@ -5,11 +5,12 @@
 # GNU General Public License v.3 applies -- see filee LICENSE
 
 
-SYS_VERSION = "1.0.12"
+SYS_VERSION = "1.0.13"
 
+import sys
+assert(sys.version_info[0] >= 3)
 import ConfigMan
-import six
-from six import print_
+
 import os
 import sys
 from collections import defaultdict
@@ -51,7 +52,7 @@ class UsageError(BMTError):
     String = "Insreg usage"
 
 def _dttix(track):
-    print_(map(attrgetter("tick"), track))
+    print(map(attrgetter("tick"), track))
 
 
 def create_TextEvent(cls, tick, text):
@@ -113,7 +114,7 @@ class Converter(collision.mixin,ConverterBase):
 
     def do_stop_event(self, rev, iTrack): # The stop and the track need some relays.
         if self.args.notes:
-            print_(rev.listing_describe())
+            print(rev.listing_describe())
         return rev.execute() # returns a list now
 
     def do_routing_event(self, rev, iTrack):
@@ -123,7 +124,7 @@ class Converter(collision.mixin,ConverterBase):
         division = rev.get_division()
         descriptor = "chnl" if self.use_channels else "staff"
         if self.args.routings:
-            print_ ("ROUTING @tick %d %s: %s %d to %s on channel %d" % (rev.tick, rev.point,
+            print ("ROUTING @tick %d %s: %s %d to %s on channel %d" % (rev.tick, rev.point,
                descriptor, staff, division, division.get_channel()))
         s = iTrack.notes_on[staff]
         if s:
@@ -151,7 +152,7 @@ class Converter(collision.mixin,ConverterBase):
             rev = pending_events.pop(0)
             for item in self.dispatch_reg_event(rev)(rev, None):
                 if self.args.generated:
-                    print_("Generating @tick", rev.tick, "m+b", rev.point, "\n  ", item)
+                    print("Generating @tick", rev.tick, "m+b", rev.point, "\n  ", item)
                 midi_events.append(item)
         return midi_events
 
@@ -167,10 +168,10 @@ class Converter(collision.mixin,ConverterBase):
             if isinstance(event, KEEP_NONNOTE_EVENTS) and not isinstance(event, BUT_NOT_EVENTS): #includes EOT
                 assert isinstance(event, midi.MetaEvent)
                 if self.args.notes:
-                    print_(interpret_random_event(event))
+                    print(interpret_random_event(event))
                 new_track.append(event.__class__(tick=event.tick, data=event.data[:]))
             elif self.args.deletes and not isinstance(event, midi.NoteEvent):
-                print_("DELETING", interpret_random_event(event))
+                print("DELETING", interpret_random_event(event))
         return new_track
 
     def handle_reroutes(self, routing_events, tick, tx, onmap):
@@ -180,7 +181,7 @@ class Converter(collision.mixin,ConverterBase):
             if rev.staff == tx:
                 dest = rev.division #ignore mature multiple insts, last is correct
                 if self.args.routings:
-                    print_ ("ROUTING @tick %d %s: track %d to %s on channel %d" % (rev.tick, rev.point,
+                    print ("ROUTING @tick %d %s: track %d to %s on channel %d" % (rev.tick, rev.point,
                         tx, dest, dest.get_channel()))
                 if onmap:
                     raise UsageError ("Notes being split between divisions, staff %d, %s",
@@ -210,7 +211,7 @@ class Converter(collision.mixin,ConverterBase):
             self.verify_order(new_track)
             new_track.append(midi.EndOfTrackEvent(tick=self.time_model.final_tick))
             return new_track
-        print_("Seemingly no notes in routed track #%d." % tx)
+        print("Seemingly no notes in routed track #%d." % tx)
         return False
 
     def insert_signatures(self, tx, track):
@@ -267,12 +268,12 @@ class Converter(collision.mixin,ConverterBase):
             return os.path.join(mydir, path)
 
     def call_phraser(self, phrasing_path, midi_path):
-        print_(APP+": calling phraser on", midi_path)
+        print(APP+": calling phraser on", midi_path)
         phraser = Phraser(DuckPunchArgs(check=True,idinfo=self.id))
         phraser.process_files(phrasing_path, midi_path)
         self.midi_data = phraser.midi_data
 
-        print_(APP+": Phrasing complete. Beginning registration on phrased output.")
+        print(APP+": Phrasing complete. Beginning registration on phrased output.")
 
     def verify_required_fields(self, ypiece):
         have_fields = set(ypiece.keys())
@@ -321,8 +322,8 @@ class Converter(collision.mixin,ConverterBase):
         if badopt: raise UsageError("Unknown Options: %s", ", ".join(badopt))
 
         organ_name = ypiece["Organ"]
-        print_("Processing", self.id)
-        print_("    for organ at", organ_name)
+        print("Processing", self.id)
+        print("    for organ at", organ_name)
         self.orgdef = Organ(organ_name)
 
         cargs = DuckPunchArgs(kombination=self.args.kombination)
@@ -349,7 +350,7 @@ class Converter(collision.mixin,ConverterBase):
                 raise UsageError("Can't use NoOrganOutputPath in UseChannels mode.")
             if ypiece.get("UseRealStaves","UseRealStaves" in self.options): #old way
                 raise UsageError("Conflicting directions to UseChannels and UseRealStaves.")
-            print_("Routing by channel number = MuseScore instrument/Mixer row#.")
+            print("Routing by channel number = MuseScore instrument/Mixer row#.")
 
         self.setup_maps(ypiece)
 
@@ -367,14 +368,14 @@ class Converter(collision.mixin,ConverterBase):
         try:
             self.read_and_time_model(input_midi_path, base_measure)
         except IOError as e:
-            print_(e, file=sys.stderr)
+            print(e, file=sys.stderr)
             sys.exit(4)
 
         if not self.use_channels:
             for i in self.routings:
                 if i < 0 or i >= len(self.midi_data):
                     raise UsageError("Staff #%d given as routing source not present in MIDI file.", i)
-            print_("Midi file has %d tracks; keeping %d (%s)." %
+            print("Midi file has %d tracks; keeping %d (%s)." %
                     (len(self.midi_data), len(self.routings), ", ".join(map(str, self.routings.keys()))))
         if any(n >= len(self.midi_data) for n in self.NoOrganForceStaves):
             raise UsageError("Staff number in NoOrganForceStaves not present in score.")
@@ -389,7 +390,7 @@ class Converter(collision.mixin,ConverterBase):
 
         if self.hoist_initial_regs or self.use_soft_general_cancel:
            self.hoisted_events = hoist_init_regs(self.schedule)
-           print_("%d registration events hoisted to before piece." % len(self.hoisted_events))
+           print("%d registration events hoisted to before piece." % len(self.hoisted_events))
 
         self.premunged_data = self.copy_midi_data(self.midi_data)
         self.munge_midi_data()  #dispatches to oldcode iff present
@@ -400,7 +401,7 @@ class Converter(collision.mixin,ConverterBase):
         if self.orgdef.needs_prologue and "NoPrologue" not in self.options:
             prol = self.orgdef.get_prefab_prologue()
             self.midi_data[0][0:0] = prol
-            print_("Inserted prefabricated prologue, %d events." % len(prol))
+            print("Inserted prefabricated prologue, %d events." % len(prol))
     
         mergeit = "MergeTracks" in self.options or self.orgdef.needs_track_merge
         if mergeit:
@@ -414,7 +415,7 @@ class Converter(collision.mixin,ConverterBase):
         self.report_all_tracks()
 
         if self.args.check:
-            print_(self.REDify("Warning! NO OUTPUT! Output suppressed with -c!!"))
+            print(self.REDify("Warning! NO OUTPUT! Output suppressed with -c!!"))
         else:
             if self.NoOrganOutputPath:
                 self.output_no_organ_tracks()
@@ -459,7 +460,7 @@ class Converter(collision.mixin,ConverterBase):
         wanted_track_numbers = provided_track_numbers - organ_track_numbers
         wanted_track_numbers |= self.NoOrganForceStaves
         if not wanted_track_numbers:
-            print_(ConverterBase.REDify("No non-organ tracks. Not writing not-organ MIDI."))
+            print(ConverterBase.REDify("No non-organ tracks. Not writing not-organ MIDI."))
             return
         new_midi = midi.Pattern(resolution=self.midi_data.resolution,tick_relative=True)
         if 0 not in wanted_track_numbers:
@@ -470,7 +471,7 @@ class Converter(collision.mixin,ConverterBase):
 
         path = self.expand_relative_path(self.NoOrganOutputPath)
         midi.write_midifile(path, new_midi)
-        print_("Wrote non-organ MIDI %s, %d staves, %d bytes." % \
+        print("Wrote non-organ MIDI %s, %d staves, %d bytes." % \
                 (path, len(wanted_track_numbers), os.path.getsize(path)))
             
     def heart_of_merge(self, first_index):
@@ -485,7 +486,7 @@ class Converter(collision.mixin,ConverterBase):
         track.append(midi.EndOfTrackEvent(tick=1))
 
     def merge_tracks(self):
-        print_("Collapsing %d tracks into one." % len(self.midi_data))
+        print("Collapsing %d tracks into one." % len(self.midi_data))
         assert self.midi_data[0].tick_relative
         self.midi_data.make_ticks_abs() # will check-assert abs
         self.midi_data = midi.Pattern(resolution=self.midi_data.resolution,
@@ -514,14 +515,14 @@ class Converter(collision.mixin,ConverterBase):
             if len(events) and not all(map(lambda e: isinstance(e, midi.TimeSignatureEvent), events)):
                 track_names.append(div.main_name)
                 self.midi_data.append(events)
-        print_("Redistributing into %d tracks: %s." %
+        print("Redistributing into %d tracks: %s." %
             (len(self.midi_data), ", ".join(track_names)))
         self.midi_data.make_ticks_rel()
         for t in self.midi_data[1:]:
             self.cap_track(t)
 
 def main():
-    print_("VPOMIDITools v. "+SYS_VERSION+" Copyright (C) 2016-2020 by Bernard Greenberg",
+    print("VPOMIDITools v. "+SYS_VERSION+" Copyright (C) 2016-2020 by Bernard Greenberg",
                "GNU General Public License V.3 applies; see LICENSE.",
               "", sep="\n", file=sys.stderr)
 
@@ -564,14 +565,14 @@ def main():
         e.report(file=sys.stderr)
         sys.exit(2)
     except (yaml.error.YAMLError) as e:
-        print_(ConverterBase.REDify("YAML error:"), e, file=sys.stderr)
+        print(ConverterBase.REDify("YAML error:"), e, file=sys.stderr)
         sys.exit(2)
 
 def RunOldcode(args):
     VALID_OPTIONS.add("UseChannels")
     import channel_capable_insreger as CCI # eg, InsMax(Insreger)
     class channel_capable_converter(CCI.mixin, Converter): pass
-    print_("Using old channel-capable code.")
+    print("Using old channel-capable code.")
     channel_capable_converter(args).process_files(args.PieceDef, args.MidiPath)
 
 

@@ -4,13 +4,14 @@
 #See file LICENSE in project directory.
 #
 
+import sys
+assert(sys.version_info[0] >= 3) #2/3/2024
+
 import ConfigMan
-import six
 import itertools
 import midi    
 from collections import defaultdict
 from operator import attrgetter
-from six import print_
 
 # 9 Nov 2017 -- 1 year after the apocalypse
 
@@ -55,7 +56,7 @@ class mixin(object):
                 if pitch in m:
                     turnon_coll += 1
                     if self.args.collisions:
-                        print_("Redundant note-on ch %d, %s" \
+                        print("Redundant note-on ch %d, %s" \
                             %  (event.channel, self.diagpoint(event.pitch, event.tick)))
                     thieves.add(event) #try to elim turnon-collisions
     
@@ -70,7 +71,7 @@ class mixin(object):
                     shutoff_coll += 1
                     thieves.add(baddie)
         if thieves:
-            print_("%d damaging shutoff collisions, %d keyboard-redundant note-on's."
+            print("%d damaging shutoff collisions, %d keyboard-redundant note-on's."
                    % (shutoff_coll, turnon_coll))
         if fix and thieves:
             self.remove_shutoff_thieves(thieves)  #remove all the thieves we encountered
@@ -78,34 +79,34 @@ class mixin(object):
         return len(thieves)
 
     def find_shutoff_thief(self, track, this_index, event):
-        for back_index in six.moves.range(this_index-1, -1, -1):
+        for back_index in range(this_index-1, -1, -1):
             earlier_event = track[back_index]
             if not isinstance(earlier_event, midi.NoteEvent):
                 continue
             if event_same(earlier_event, event): #channel, pitch, off-on-ness identical.
                 if earlier_event.tick == event.tick:  #Not a problem for THIS event.
                     ftick = round_tick(earlier_event.tick, self.ticks_to_MB)
-                    print_("same-time event ch %d, %s, %s" \
+                    print("same-time event ch %d, %s, %s" \
                             %  (event.channel, self.diagpoint(event.pitch, ftick), earlier_event))
                     return None
                 
                 if self.args.collisions:
                     ftick = round_tick(earlier_event.tick, self.ticks_to_MB)
-                    print_("Premature shutoff ch %d, %s" \
+                    print("Premature shutoff ch %d, %s" \
                             %  (event.channel, self.diagpoint(event.pitch, ftick)))
 
                 return earlier_event
         else:
-            print_("Can't find note shutoff thief for", self.diagpoint(event.pitch, event.tick))
+            print("Can't find note shutoff thief for", self.diagpoint(event.pitch, event.tick))
         return None
 
     def remove_shutoff_thieves(self, events):
-        print_(len(events), "unison collisions to be removed.")
+        print(len(events), "unison collisions to be removed.")
         for tno,track in enumerate(self.midi_data):
             if any(e in events for e in track):
                 new_track = [e for e in track if e not in events]
                 oldct,newct = len(track), len(new_track)
-                print_("Track %d reduced from %d to %d for %d unison collisions." \
+                print("Track %d reduced from %d to %d for %d unison collisions." \
                         % (tno, oldct, newct, oldct - newct))
                 track[:] = new_track
 
@@ -119,13 +120,13 @@ class mixin(object):
                     if is_it_note_on(event1) and not is_it_note_on(event2):
                         if self.args.collisions:
                             ftick = round_tick(event1.tick, self.ticks_to_MB)
-                            print_("Track %d[%d] 0-length note ch %d, %s" %
+                            print("Track %d[%d] 0-length note ch %d, %s" %
                                     (tno, i, event1.channel, self.diagpoint(event1.pitch, ftick)))
                         indices_to_remove.add(i)
                         indices_to_remove.add(i+1)
             if (len(indices_to_remove)):
                 track[:] = [e for (j, e) in enumerate(track) if j not in indices_to_remove]
-                print_("Shortened track %d for %d 0-length notes" % (tno, len(indices_to_remove)/2))
+                print("Shortened track %d for %d 0-length notes" % (tno, len(indices_to_remove)/2))
             
 
 if __name__ == "__main__":
@@ -137,7 +138,7 @@ if __name__ == "__main__":
             ConverterBase.__init__(self, "collision", args)
             self.read_and_time_model(path, 1)
             ct = self.all_track_collision_analyze(fix=False)
-            print_(path + ":", ct, "shutoff collisions.")
+            print(path + ":", ct, "shutoff collisions.")
 
         def diagpoint(self, note, tick):
             return "%s @tick %s, m+b %s" % (decode_note(note), tick, self.ticks_to_MB(tick))

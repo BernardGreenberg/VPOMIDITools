@@ -8,16 +8,15 @@
 #See file LICENSE in project directory.
 #
 
-import six  # Python 2 - 3 compatible.
+import sys
+assert(sys.version_info[0] >= 3) #2/3/2024
+
 import os
 import re
-import sys
+
 import time
 from fractions import Fraction
 from collections import defaultdict, namedtuple
-
-#from six.moves import xrange
-from six import print_
 
 import ConfigMan
 import midi
@@ -26,21 +25,12 @@ import test_status_byte_bug
 
 import MidiTimeModel
 
-if six.PY2:
-    write_midifile = midi.write_midifile
-    #from bsgpmfio import write_midifile, ADDRESS_TRACE
-else:
-    from midi import write_midifile
-    xrange = range
+
+from midi import write_midifile
 
 def set_fio_address_trace(b):
     midi.ADDRESS_TRACE = b #won't do much unless using patch package
 
-def compatenc(s):
-    if six.PY2:
-        return s.encode("UTF-8:")
-    else:
-        return s
 
 CHROMATIC_SCALE = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#",  "A", "A#", "B"]
 NOTE_RE = re.compile("^[a-gA-G](#*|b*) *\\d$")
@@ -68,7 +58,7 @@ class DuckPunchArgs(object):
 
 class IdInfo(namedtuple("IdInfoBase", ["name", "composer"])):
     def __str__(self):
-        return (compatenc('"%s" by %s' % (self.name, self.composer)))
+        return ('"%s" by %s' % (self.name, self.composer))
     @staticmethod
     def from_yaml(yinfo):
         try:
@@ -76,7 +66,7 @@ class IdInfo(namedtuple("IdInfoBase", ["name", "composer"])):
         except KeyError:
             raise RuntimeError("Name and Composer fields are required in all driver files.")
     
-class EditableTrackIterator(six.Iterator):   #3/27/2017
+class EditableTrackIterator(object):   #3/27/2017 #Py3 only, 2/3/2024
     def __init__(self, track):
         self.track = track
         self.index = 0
@@ -272,10 +262,10 @@ class ConverterBase(object):
             target = os.path.join(dir, basic + "." + suffix + ext)
         target = os.path.abspath(os.path.expanduser(target))
         write_midifile(target, self.midi_data)
-        print_ ("Wrote ", target+",", "len=", os.path.getsize(target), "bytes.\n"+time.ctime())
+        print ("Wrote ", target+",", "len=", os.path.getsize(target), "bytes.\n"+time.ctime())
 
     def verify_integer_ticks(self, track):
-        for i in xrange(1, len(track)):
+        for i in range(1, len(track)):
             tick = track[i].tick
             if not isinstance(tick, int):
                 (m,b) = self.time_model.ticks_to_MB(int(tick))
@@ -284,29 +274,29 @@ class ConverterBase(object):
 
 
     def verify_order(self, track):
-        for i in xrange(1, len(track)):
+        for i in range(1, len(track)):
             if track[i].tick < track[i-1].tick:
                 (m, b) = self.time_model.ticks_to_MB(track[i-1].tick) # i is bad, use i - 1
-                print_ ("Out of order error near measure", m, "beat", b, file=sys.stderr)
+                print ("Out of order error near measure", m, "beat", b, file=sys.stderr)
                 raise RuntimeError("Ticks in track out of order, index " + str(i))
 
     def no_midi_please(self, path):
         if path.endswith(".mid"):
-            print_ (self.app + ":", "Please don't give me MIDI files, thanks!", file=sys.stderr)
+            print (self.app + ":", "Please don't give me MIDI files, thanks!", file=sys.stderr)
             sys.exit(2)
 
     def read_and_time_model(self, path, start_measure = 1, quiet=False):
         input_midi_path = os.path.abspath(os.path.expanduser(path))
 
         if not quiet:
-            print_ (self.app + ":", "Processing ", input_midi_path)
+            print (self.app + ":", "Processing ", input_midi_path)
         self.midi_data = midi.read_midifile(input_midi_path)
 
         self.time_model = MidiTimeModel.build_time_model(self.midi_data, start_measure)
 
     def report_app_signature(self, path):
-        print_ (self.app+":", path, "modified: %s" % time.ctime(os.path.getmtime(path)))
-        print_ ("In python", sys.version.split("\n")[0])
+        print (self.app+":", path, "modified: %s" % time.ctime(os.path.getmtime(path)))
+        print ("In python", sys.version.split("\n")[0])
 
     def MB_to_ticks(self, m, b):
         return self.time_model.MB_to_ticks(m,b)

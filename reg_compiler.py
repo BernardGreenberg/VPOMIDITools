@@ -4,8 +4,9 @@
 #See file LICENSE in project directory.
 #
 
-import six
-from six import print_
+import sys
+assert(sys.version_info[0] >= 3)
+
 from operator import attrgetter, itemgetter
 from MidiTimeModel import MeasureBeat
 from organ import RegError, RegErrorPt
@@ -18,7 +19,7 @@ def commalist(stuff):
         return stuff
     if isinstance(stuff, int):
         return [stuff]
-    assert isinstance(stuff, six.string_types)
+    assert isinstance(stuff, str)
     return [x.strip() for x in stuff.split(",")]
 
 
@@ -57,11 +58,11 @@ class RegCompiler:
 
         for stop in curbag - newbag:
             if self.opts.kombination:
-                print_("%s %s %s removing %s" % (dname, combname, point, stop))
+                print("%s %s %s removing %s" % (dname, combname, point, stop))
             self.events.add_reg(point, False, stop)
         for stop in newbag - curbag:
             if self.opts.kombination:
-                print_("%s %s %s adding %s" % (dname, combname, point, stop))
+                print("%s %s %s adding %s" % (dname, combname, point, stop))
             self.events.add_reg(point, True, stop)
 
     def compile_combination_dictionary(self, combinations_spec):
@@ -91,7 +92,7 @@ class RegCompiler:
             return exp
         elif exp in EXPRESSION_EXPRESSIONS:
             return EXPRESSION_EXPRESSIONS[exp]
-        elif isinstance(exp, six.string_types) and exp.endswith("%"):
+        elif isinstance(exp, str) and exp.endswith("%"):
             try:
                 v = int(int(exp[:-1])*1.27)
                 if v < 0 or v > 127:
@@ -186,7 +187,7 @@ class RegCompiler:
                 for (beat, directions) in entry.items():
                     by_time_point[MeasureBeat(measure, beat)] = directions
             #Gnew style -- 32+.25 or 32 (+0)
-            elif all(isinstance(key, six.string_types) for key in entry):
+            elif all(isinstance(key, str) for key in entry):
                 try:
                     by_time_point[MeasureBeat.parse(measure)] = entry
                 except ValueError:

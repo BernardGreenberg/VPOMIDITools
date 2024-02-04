@@ -6,8 +6,9 @@
 # Subroutinal package to construct models of time-signature and tempo extents of
 # a midi-defined piece, and field queries to it about measure/beat, tick position, and real-time.
 
-from six import print_
-import six
+import sys
+assert(sys.version_info[0] >= 3) #2/3/2024
+
 import midi
 from fractions import Fraction
 from collections import namedtuple
@@ -39,7 +40,7 @@ class MeasureBeat(namedtuple("MB0","measure,beat")):
         if isinstance(n, int):
             return n
         fr = Fraction(n).limit_denominator(1000)
-        #print_(fr.numerator, fr.denominator,n,Fraction(n))
+        #print(fr.numerator, fr.denominator,n,Fraction(n))
         if (fr.denominator & (fr.denominator - 1)) == 0: #power of 2
             if n < .001:
                 return 0
@@ -53,7 +54,7 @@ class MeasureBeat(namedtuple("MB0","measure,beat")):
 
     @staticmethod
     def parse(spec, default_beat=0):
-        if isinstance(spec, six.string_types) and '+' in spec: # don't test actual int's
+        if isinstance(spec, str) and '+' in spec: # don't test actual int's
             comps = spec.split("+")
             if not (len(comps) == 2 and all(comps)):
                 raise ValueError("Invalid measure+beat string: " + spec)
@@ -134,7 +135,7 @@ class TimeModel(list):
     def dump(self):
         for (i, tme) in enumerate(self):
             tme.dump(i)
-        print_ ("END at tick", self[-1].final_tick, "= m.", self[-1].final_measure)
+        print ("END at tick", self[-1].final_tick, "= m.", self[-1].final_measure)
 
     def dump_tempo(self):
         assert self.tempo_model is not None
@@ -184,10 +185,10 @@ class TempoModel(list):
         return self.ticks_to_seconds(self[-1].end_tick)
 
     def dump(self):
-        print_("Tempo model:")
+        print("Tempo model:")
         for (i, tmpe) in enumerate(self):
             tmpe.dump(i)
-        print_("END at %8.4f seconds." % self.end_seconds())
+        print("END at %8.4f seconds." % self.end_seconds())
 
 
 class TempoElement(object):
@@ -232,7 +233,7 @@ class TempoElement(object):
 
     def dump(self, i):
         mb = self.time_model_wr().ticks_to_MB(self.base_tick)
-        print_("TmpE %2d mb %-08s tick %5d sec %6.2f: %5.1f qt/m, %4.0f ticks/sec. Len %5d ticks = %7.3f sec"
+        print("TmpE %2d mb %-08s tick %5d sec %6.2f: %5.1f qt/m, %4.0f ticks/sec. Len %5d ticks = %7.3f sec"
                    % (i, mb, self.base_tick, self.base_seconds,
                        self.qpm, 1.0/self.seconds_per_tick, self.length_ticks, self.length_seconds))
 
@@ -261,7 +262,7 @@ class TME(object):  # Time model element  -- new time management system 1/10/17
         self.len_measures = self.len_beats // self.beats_per_measure
 
     def dump(self, i):
-       print_ ("TME %i: @ticks %5d m %2d, sig %s beat %s tpb %d bpm %d len T/B/M (%d %d %d)" \
+       print ("TME %i: @ticks %5d m %2d, sig %s beat %s tpb %d bpm %d len T/B/M (%d %d %d)" \
            %(i, self.tick, self.base_measure, self.signature, self.beat, self.ticks_per_beat, \
               self.beats_per_measure, self.len_ticks, self.len_beats, self.len_measures))
 

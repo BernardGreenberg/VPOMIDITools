@@ -5,7 +5,9 @@
 #See file LICENSE in project directory.
 #
 
-import six
+import sys
+assert(sys.version_info[0] >= 3) #2/3/2024
+
 import midi
 from collections import namedtuple
 
@@ -36,7 +38,7 @@ Track   = namedtuple("Track", ("index", "address", "length", "events"))
 Event   = namedtuple("Event", ("address", "length", "running_status", "event"))
 
 #Private iterator class for indexables that allows asking about "pos" (tell()).
-class TellableArrayIterator(six.Iterator): #next vs __next__
+class TellableArrayIterator(object): #next vs __next__
     def __init__(self, S):
         self.S = S
         self.pos = 0
@@ -84,7 +86,7 @@ class AsyFileReader(midi.FileReader):
             except StopIteration:
                 break
 
-class RechargeableFileCharacterIterator(six.Iterator): #next vs __next__
+class RechargeableFileCharacterIterator(object): #next vs __next__
     def __init__(self, file):
         self.file = file
         self.pos = 0  #file-absolute

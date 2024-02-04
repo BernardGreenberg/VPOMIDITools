@@ -6,13 +6,11 @@
 #See file LICENSE in project directory.
 #
 
-
-from six import print_, PY3
-XOrd = int if PY3 else ord
+import sys
+assert(sys.version_info[0] >= 3) #2/3/2024
 
 import os
-import six
-import sys, time
+import time
 import argparse
 import warnings
 
@@ -58,19 +56,19 @@ def dump_midi_file_batchily(file_path, args, tracks_to_dump):
     pattern = midi.read_midifile(file_path)   #VB's python-midi
     #These days, build_time_model can't fail; There are default time-signature and tempo.
     time_model = build_time_model(pattern, args.starting_measure);   #BSG system, not python-midi.
-    print_("Resolution %d, format %d, %d tracks." % (pattern.resolution, pattern.format, len(pattern)))
+    print("Resolution %d, format %d, %d tracks." % (pattern.resolution, pattern.format, len(pattern)))
 
     time_model.dump()
     if args.seconds:
         time_model.dump_tempo()
 
-    print_("\n" + sekey(args) + _short_key)
+    print("\n" + sekey(args) + _short_key)
     for (track_number, track) in enumerate(pattern):
         dump_track_channel_content(track_number, track)
         if tracks_to_dump and track_number not in tracks_to_dump:
             continue
         if not args.brief:
-            print_("")
+            print("")
 
         abs_tick = 0
         for event in track:
@@ -80,7 +78,7 @@ def dump_midi_file_batchily(file_path, args, tracks_to_dump):
             if measure > args.to: break
 
             if (not args.brief) and args.seconds:
-                print_("%7.3f" % time_model.ticks_to_seconds(abs_tick), end = " ")
+                print("%7.3f" % time_model.ticks_to_seconds(abs_tick), end = " ")
             dump_event(abs_tick, track_number, event, time_model, args.brief)
 
 #Shared event-dumper. Note that address/length in batch mode is already printed without a newline.
@@ -99,18 +97,18 @@ def dump_event(abs_tick, track_number, event, time_model, brief):
                 assert False,"Mystery Note Event " + str(event)
             note = decode_note(event.pitch)  #BSG's system, not VB's.        #
 
-            print_ ("%d %d   %4d %7d  %s %s %s%s" % \
+            print ("%d %d   %4d %7d  %s %s %s%s" % \
                 (track_number, event.channel, event.tick, abs_tick, command, note, measure_beat, v))
         """
     elif isinstance(event, midi.TimeSignatureEvent):
         event_tix = "" if brief else "%4d" % event.tick
-        print_("%d     %4s %7d  TIME SIGNATURE %d/%d @ %s" % \
+        print("%d     %4s %7d  TIME SIGNATURE %d/%d @ %s" % \
             (track_number, event_tix, abs_tick, event.numerator, event.denominator, measure_beat))
          """
     elif not brief:
         chid = event.channel if hasattr(event, "channel") else " "
         event_desc = interpret_random_event(event, True)
-        print_("%d %s   %4d   %5d  %-8s %s" % (track_number, chid, event.tick, abs_tick, measure_beat, event_desc))
+        print("%d %s   %4d   %5d  %-8s %s" % (track_number, chid, event.tick, abs_tick, measure_beat, event_desc))
 
 """
 This is the incremental descent of the future-laden MIDI tree.  It differs from the standard, synchronous, one
@@ -123,14 +121,14 @@ def dump_midi_file_incrementally(file_path, args, hexfile):
     midi_header = IRM.AsyTreeFileReader().access(file_path)   #Our header structure; python-midi's isn't needed
     time_model = TimeModel(midi_header.resolution,starting_measure=args.starting_measure)
 
-    print_("%d tracks. Resolution=%d, format %d" % (midi_header.n_tracks, midi_header.resolution, midi_header.format))
+    print("%d tracks. Resolution=%d, format %d" % (midi_header.n_tracks, midi_header.resolution, midi_header.format))
     if not args.brief:
-        print_(sekey(args) +"fadr ln  " + _short_key)
+        print(sekey(args) +"fadr ln  " + _short_key)
     for track in midi_header.tracks:   # Iterate over "list" (actually generator) of tracks...
         track_number = track.index
         if not args.brief:
             print("")   
-        print_ ("TRACK    %d @ byte %d, byte length %d" % (track_number, track.address, track.length))
+        print ("TRACK    %d @ byte %d, byte length %d" % (track_number, track.address, track.length))
 
         abs_tick = 0
         for item in track.events:      #extract "event list" (actually, "event-generator") from wrapper ...
@@ -148,14 +146,14 @@ def dump_midi_file_incrementally(file_path, args, hexfile):
             #Prefix address and length to each line before dumping it if opted.
             if not args.brief:
                 if args.seconds:
-                    print_("%7.3f" % time_model.ticks_to_seconds(abs_tick), end = " ")
-                print_("%4d %2d" % (item.address, item.length), end = "  ")
+                    print("%7.3f" % time_model.ticks_to_seconds(abs_tick), end = " ")
+                print("%4d %2d" % (item.address, item.length), end = "  ")
 
             dump_event(abs_tick, track_number, event, time_model, args.brief)
             if args.hex:
                 hexfile.seek(item.address, 0)
-                data = ["%02X" % XOrd(c) for c in hexfile.read(item.length)]
-                print_("   %4d      %s" % (item.address, " ".join(data)))
+                data = ["%02X" % int(c) for c in hexfile.read(item.length)]
+                print("   %4d      %s" % (item.address, " ".join(data)))
 
 def check_midi_file(file_path):
     reader = IRM.AsyTreeFileReader()
@@ -170,7 +168,7 @@ def check_midi_file(file_path):
     return True
 
 def argerr(string):
-    print_(sys.argv[0] + ':', string, file=sys.stderr)
+    print(sys.argv[0] + ':', string, file=sys.stderr)
     sys.exit(1)
 
 def parse_and_validate_args():
@@ -201,7 +199,7 @@ def parse_and_validate_args():
     return args
 
 def main():
-    print_("VPOMIDITools Copyright (C) 2016-2020 by Bernard S. Greenberg",
+    print("VPOMIDITools Copyright (C) 2016-2020 by Bernard S. Greenberg",
                "GNU General Public License V.3 applies. See file LICENSE for details.",
                sep="\n", file=sys.stderr)
     args = parse_and_validate_args()
@@ -210,33 +208,33 @@ def main():
     file_path = args.path[0]
     absp = os.path.abspath(file_path)    
     if not os.path.isfile(absp):
-        print_("Error: File does not exist:", absp, file=sys.stderr) #no stack trace!
+        print("Error: File does not exist:", absp, file=sys.stderr) #no stack trace!
         sys.exit(2)
 
     if not args.check:
-        print_ ("Source %s, modified %s" % \
+        print ("Source %s, modified %s" % \
                 (os.path.abspath(__file__), time.ctime(os.path.getmtime(__file__))))
-        print_ ("In python", sys.version.split("\n")[0])
-        print_ ("\nMIDI file %s, %d bytes, mod. %s." % \
+        print ("In python", sys.version.split("\n")[0])
+        print ("\nMIDI file %s, %d bytes, mod. %s." % \
             (os.path.abspath(file_path), os.path.getsize(file_path), time.ctime(os.path.getmtime(file_path))))
 
 
     if args.check:
         if check_midi_file(absp):
-            print_("OK:     %s has no status byte problems." % absp)
+            print("OK:     %s has no status byte problems." % absp)
             sys.exit(0)
         else:
-            print_("ERRORS: %s has one or more status byte problems." % absp)
+            print("ERRORS: %s has one or more status byte problems." % absp)
             sys.exit(2)
     elif args.incremental:
-        print_("Decoding in incremental mode.\n")
+        print("Decoding in incremental mode.\n")
         if args.hex:
             with open(file_path, "rb") as hexfile:
                 dump_midi_file_incrementally(file_path, args, hexfile)
         else:
                 dump_midi_file_incrementally(file_path, args, None)
     else:
-        print_("Decoding in batch mode.\n")
+        print("Decoding in batch mode.\n")
         dump_midi_file_batchily(file_path, args, tracks_to_dump)
 
 def decode_tracks_arg(arg):
