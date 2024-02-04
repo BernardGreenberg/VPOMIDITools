@@ -4,8 +4,9 @@
 #See file LICENSE in project directory.
 #
 
-from six import print_, add_metaclass
 import sys
+assert(sys.version_info[0] >= 3)
+
 import ConfigMan
 import yaml
 from DupCheckingYamlFix import DCSafeLoader
@@ -72,8 +73,7 @@ class ElementTemplate(object):
         else:
             return self.midi_class(tick=tick, data=output)
 
-@add_metaclass(ControlModelMetaclass)
-class BaseModel(object):
+class BaseModel(object, metaclass=ControlModelMetaclass):
     def __init__(self, ydict, name, orgsys):
         super(BaseModel, self).__init__()
         if REFK in ydict:
@@ -170,7 +170,7 @@ class OrganSystem(object):
     @staticmethod
     def FindAndCreate(name, alt_model=None):
         path = ConfigMan.find_orgsys_definition(name)
-        print_ (name + " system definition file " + path)
+        print(name + " system definition file " + path)
         y = yaml.load(open(path, "rb"), Loader=DCSafeLoader)
         if name != y["ShortName"]:
             raise OrganSystemDefinitionError("File %s does not define organ system \"%s\" as expected.", path, name)
@@ -264,23 +264,23 @@ class OrganSystem(object):
 def _test_orgsys(osd):
     test_map = {"Control": osd.isControlKnown, "Reversible": osd.ActSystemReversible,
                 "Stop": osd.ActDefaultStopModel, "Single": osd.ActSystemSingleAction}
-    print_("Defined", osd.short_name, "tests.")
+    print("Defined", osd.short_name, "tests.")
     for test in osd.Tests:
         test_type, test_parms = test[0], test[1:]
-        print_("TEST:", test_type, test_parms)
+        print("TEST:", test_type, test_parms)
         if test_type == "Control":
             assert osd.isControlKnown(*test_parms)
         fcn = test_map[test_type] #let it blow up if not
-        print_(fcn(*test_parms))
+        print(fcn(*test_parms))
 
 
 def _test(name):
     osd = OrganSystem.FindAndCreate(name)
-    print_ ("Orgsys def:", osd)
-    print_ ("Default stop model:", osd.DefaultStopModel)
-    print_ ("Deft Stop Model actors[1]:", osd.DefaultStopModel.actors[1])
-    print_ ("Create DSM Reversible:", osd.DefaultStopModel.ReversibleControl(osd.DefaultStopModel, [1,2,3], "Zungen ab"))
-    print_ ("Default P1:", osd.DefaultStopModel.default_p1)
+    print("Orgsys def:", osd)
+    print("Default stop model:", osd.DefaultStopModel)
+    print("Deft Stop Model actors[1]:", osd.DefaultStopModel.actors[1])
+    print("Create DSM Reversible:", osd.DefaultStopModel.ReversibleControl(osd.DefaultStopModel, [1,2,3], "Zungen ab"))
+    print("Default P1:", osd.DefaultStopModel.default_p1)
     if osd.Tests:
         _test_orgsys(osd)
 

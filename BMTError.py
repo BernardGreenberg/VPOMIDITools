@@ -4,8 +4,9 @@
 #See file LICENSE in project directory.
 #
 
-from six import add_metaclass, text_type
 import sys
+assert(sys.version_info[0] >= 3)
+
 
 # BSG Midi Tools, routes tracks .... (BMT also= Brooklyn Manhattan Transit)
 class _BMTErrorMeta(type):
@@ -15,8 +16,7 @@ class _BMTErrorMeta(type):
             if not hasattr(cls, "String"):
                 raise RuntimeError("BMT error class " + name + " has no \"String\" attribute.")
 
-@add_metaclass(_BMTErrorMeta)
-class BMTError(RuntimeError):
+class BMTError(RuntimeError, metaclass=_BMTErrorMeta):
     def __init__(self, ctlstring, *args):
         if len(args) == 0:
             RuntimeError.__init__(self, ctlstring)
@@ -24,6 +24,6 @@ class BMTError(RuntimeError):
             RuntimeError.__init__(self, ctlstring % tuple(args))
 
     def report(self, file=sys.stderr):
-        red_text = "\033[0;31m" + text_type(self) + "\033[0;30m"
+        red_text = "\033[0;31m" + str(self) + "\033[0;30m"
         all_text = "\n" + self.String + " error: " + red_text + "\n"
         file.write(all_text)

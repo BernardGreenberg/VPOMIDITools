@@ -3,9 +3,9 @@
 #Offered according to GNU Public License Version 3
 #See file LICENSE in project directory.
 #
+import sys
+assert(sys.version_info[0] >= 3)
 
-import six
-from six import print_
 import re
 import os
 import yaml
@@ -41,13 +41,10 @@ FORBIDDEN_DIVISION_NAMES = ["None", None, "null", "General", ""]
 CC_EXPRESSION = CONTROL_NUMS["Expression"]
 
 def compatenc(s):
-    if six.PY2:
-        return s.encode("UTF-8:")
-    else:
-        return s
+    return s
 
 def prntu(*args):
-    print_(compatenc(" ".join(map(six.text_type, args))))
+    print(compatenc(" ".join(map(str, args))))
 
 def cpj(lors):
     return ", ".join(list(lors))
@@ -66,7 +63,6 @@ class OrgdefError(BMTError):
     String = "Organ definition"
 
 
-@six.python_2_unicode_compatible
 class RegErrorPt(RegError):
     def __init__(self, point, ctlstring, *args):
         self.bogus_cache = ctlstring % args  # recursion problem in py2
@@ -74,10 +70,7 @@ class RegErrorPt(RegError):
         RegError.__init__(self, ctlstring, *args)
 
     def __str__(self):
-        if six.PY2:
-            s = self.bogus_cache
-        else:
-            s = RegError.__str__(self)
+        s = RegError.__str__(self)
         if self.point is None:
             return s
         else:
@@ -168,7 +161,6 @@ class SubstitutableTemplate(object):
             copy[self.indices[i]] = ac
         return copy
 
-@six.python_2_unicode_compatible
 class Organ(object):
     def __init__(self, organ_name, abs=False):
         if abs:
@@ -185,7 +177,7 @@ class Organ(object):
             self.set_up_general_pseudodiv()
             self.set_up_prologue_controls()
         except RegError as r:
-            raise OrgdefError (six.text_type(r))
+            raise OrgdefError (str(r))
 
     def load_yaml(self, path):
         ydef = yaml.load(open(path), Loader=DCSafeLoader)
@@ -318,7 +310,7 @@ class Organ(object):
             raise OrgdefError("Neither 'Address' nor 'Refer' in stop data for %s in %s", name, division.main_name)
         if "Synonyms" in attributes:
             syns = attributes["Synonyms"]
-            if isinstance(syns, six.string_types):
+            if isinstance(syns, str):
                 if "," in syns:
                     raise OrgdefError("No commas in %s stop synonyms, please. Use [...]", name)
                 syns = [syns]
@@ -629,7 +621,6 @@ class Division(object):
     def __repr__(self):
         return "<Division " + self.main_name + ", " + str(len(self.stops)) + " stops>"
 
-@six.python_2_unicode_compatible
 class Stop(object):
     def __init__(self, division, name, address):
         self.set_home(division, name)
@@ -673,7 +664,7 @@ class Stop(object):
             for (division, names) in self.namesets.items(): #this gets strong references
                 if division.is_speaking():
                     self.set_home(division, self.namesets[division].first)
-                    #print_("Rehomed to", self)
+                    #print("Rehomed to", self)
                     break
             else:
                assert False, "Can't find speaking division hosting " + str(self)
@@ -697,10 +688,7 @@ class Stop(object):
         return self.main_name + " on " + self.division.main_name
 
     def __repr__(self):
-        if six.PY2:
-            return ("<" + type(self).__name__ + " " +self.__unicode__() + ">").encode("utf-8")
-        else:
-            return ("<" + type(self).__name__ + " " +self.__str__() + ">")
+        return ("<" + type(self).__name__ + " " +self.__str__() + ">")
 
 class SpeakingStop(Stop):
     def execute(self, status, tick):
@@ -757,11 +745,11 @@ if __name__ == "__main__":
             o = Organ(orgname, abs=orgname.endswith("orgdef"))
             if args.stop:
                 div,stop = args.stop.split(":")
-                print_(o.get_division(div).get_stop(stop))
+                print(o.get_division(div).get_stop(stop))
             else:
                 o.outyaml()
     except BMTError as e:
         # o will never have the "right" value when creation fails!
-        print_("\nFor orgdef %s:" % orgname, file=sys.stderr)
+        print("\nFor orgdef %s:" % orgname, file=sys.stderr)
         e.report(file=sys.stderr)
         sys.exit(2)
